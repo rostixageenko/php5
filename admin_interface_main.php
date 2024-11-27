@@ -98,7 +98,7 @@ $selectedTable = isset($_GET['table']) ? $_GET['table'] : 'users'; // По ум�
         <button class="button">Аналитика</button>
         <a href="activity_log.php" class="button">История операций</a>
     </div>
-    <p><a href="index.php?logout='1'" class="button">Выйти</a></p> <!-- Ссылка на личный кабинет -->
+    <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
 
 <main>

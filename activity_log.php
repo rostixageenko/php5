@@ -1,6 +1,7 @@
 <?php
 // Database configuration
 include 'sessionConf.php';
+include 'activity_log_manager.php';
 $servername = "localhost";
 $username = "root"; // Ваше имя пользователя MySQL
 $password = ""; // Ваш пароль MySQL
@@ -34,14 +35,68 @@ try {
     <title>История операций</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Ваши стили */
+               .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none; /* Скрыть по умолчанию */
+            position: absolute; /* Позиционирование */
+            background-color: white; /* Белый фон */
+            min-width: 160px; /* Минимальная ширина */
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); /* Тень */
+            z-index: 1; /* На переднем плане */
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block; /* Показать при наведении */
+        }
+
+        .dropdown-content a {
+            color: black; /* Цвет текста */
+            padding: 12px 16px; /* Внутренние отступы */
+            text-decoration: none; /* Убрать подчеркивание */
+            display: block; /* Блочный элемент */
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd; /* Фон при наведении */
+        }
+
+        .account-button {
+            background-color: #3498db; /* Цвет кнопки */
+            color: white; /* Цвет текста */
+            padding: 10px 15px; /* Отступы */
+            border: none; /* Убрать рамку */
+            border-radius: 5px; /* Закругленные углы */
+            cursor: pointer; /* Указатель при наведении */
+        }
+
+        .account-button:hover {
+            background-color: #2980b9; /* Цвет кнопки при наведении */
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo"> 
+<img src="image/logo5.png" alt="Логотип" class="logo"> 
     <div class="menu">
+        <div class="dropdown">
+            <button class="button">База данных</button>
+            <div class="dropdown-content">
+                <a href="?table=users">Пользователи</a>
+                <a href="?table=auto_parts">Запчасти</a>
+                <a href="?table=orders">Заказы</a>
+                <a href="?table=customers">Покупатели</a>
+                <a href="?table=staff">Сотрудники</a>
+                <a href="?table=suppliers">Поставщики</a>
+                <a href="?table=inventory">Инвентарь</a>
+                <a href="?table=cars">Автомобили</a>
+            </div>
+        </div>
+        <button class="button">Аналитика</button>
         <a href="activity_log.php" class="button">История операций</a>
     </div>
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
@@ -80,18 +135,17 @@ try {
         <tbody>
             <?php
             // Проверяем, есть ли результаты поиска в сессии
-            if (isset($_SESSION['search_results'])) {
-                $result = $_SESSION['search_results'];
-                while ($row = $result->fetch_assoc()) {
-                    echo "<tr>
-                        <td>" . htmlspecialchars($row['id']) . "</td>
-                        <td>" . htmlspecialchars($row['login']) . "</td>
-                        <td>" . htmlspecialchars($row['action_datetime']) . "</td>
-                        <td>" . htmlspecialchars($row['action']) . "</td>
-                    </tr>";
+            if ($result->num_rows > 0) {
+				while ($row = $result->fetch_assoc()) {
+			?>
+                <tr>
+                    <td style="cursor:pointer"><?php echo htmlspecialchars($row['id']); ?></td>
+				<td style="cursor:pointer"><?php echo htmlspecialchars($row['login']); ?></td>
+				<td style="cursor:pointer"><?php echo htmlspecialchars($row['action_datetime']); ?></td>
+				<td style="cursor:pointer"><?php echo htmlspecialchars($row['action']); ?></td>
+                    </tr>
+                    <?php        
                 }
-                // Очистка результатов после вывода
-                unset($_SESSION['search_results']);
             } else {
                 echo "<tr><td colspan='4'>Нет данных для отображения.</td></tr>";
             }
