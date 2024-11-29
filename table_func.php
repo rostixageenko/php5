@@ -9,22 +9,15 @@ class TableFunction {
     }
 
     public function fetch() {
-        $query = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName) ;
-        return $this->executeQuery($query);
-    }
-    // Метод для получения данных из таблицы
-    public function selectTable() {
         $query = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
         return $this->executeQuery($query);
     }
 
-    // Метод для выполнения запроса и получения результатов
     private function executeQuery($query) {
         $result = mysqli_query($this->db, $query);
         return mysqli_fetch_all($result, MYSQLI_ASSOC);
     }
 
-    // Метод для отображения таблицы
     public function renderTable($data, $title) {
         echo "<h2>$title</h2>";
         if (count($data) > 0) {
@@ -45,6 +38,58 @@ class TableFunction {
         } else {
             echo "<p>Нет данных для отображения.</p>";
         }
+    }
+}
+
+// Подключение к базе данных
+include('server.php');
+
+$selectedTable = isset($_GET['table']) ? $_GET['table'] : 'users';
+
+$usersTable = new TableFunction($db, 'users');
+$partsTable = new TableFunction($db, 'auto_parts');
+$ordersTable = new TableFunction($db, 'orders');
+$customersTable = new TableFunction($db, 'Customers');
+$staffsTable = new TableFunction($db, 'Staff');
+$suppliersTable = new TableFunction($db, 'suppliers');
+$inventoryTable = new TableFunction($db, 'Inventory');
+$carsTable = new TableFunction($db, 'Cars');
+
+$users = $usersTable->fetch();
+$parts = $partsTable->fetch();
+$orders = $ordersTable->fetch();
+$customers = $customersTable->fetch();
+$staffs = $staffsTable->fetch();
+$suppliers = $suppliersTable->fetch();
+$inventory = $inventoryTable->fetch();
+$cars = $carsTable->fetch();
+
+$message = "";
+$messageType = "success"; // По умолчанию тип сообщения
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users') {
+    $login = trim($_POST['login']);
+    $password = trim($_POST['password']);
+    $type_role = trim($_POST['type_role']);
+
+    if (!empty($login) && !empty($password) && !empty($type_role)) {
+        $hashedPassword = md5($password);
+
+        $stmt = $db->prepare("INSERT INTO users (id, login, password, type_role) VALUES (UUID(),?, ?, ?)");
+        $stmt->bind_param("sss", $login, $hashedPassword, $type_role);
+        
+        if ($stmt->execute()) {
+            $message = "Пользователь добавлен успешно.";
+            $messageType = "success"; // Успешное сообщение
+            $users = $usersTable->fetch(); // Обновляем данные
+        } else {
+            $message = "Ошибка добавления пользователя.";
+            $messageType = "error"; // Ошибка
+        }
+        $stmt->close();
+    } else {
+        $message = "Пожалуйста, заполните все поля.";
+        $messageType = "error"; // Ошибка
     }
 }
 ?>

@@ -16,7 +16,7 @@ body {
 
 /* Стили для блока <main> */
 main {
-  width: 60%; /* Устанавливаем ширину блока */
+  width: 90%; /* Устанавливаем ширину блока */
   margin: 20px auto; /* Центрируем блок */
   padding: 20px; /* Добавляем внутренние отступы */
   background: white; /* Белый фон */
@@ -100,24 +100,25 @@ form, .content {
   border-radius: 5px;
 }
 
-/* Стили для сообщений об ошибках и успехе */
 .error {
   width: 92%;
-  margin: 0px auto;
+  margin: 0 auto;
   padding: 10px;
   border: 1px solid #a94442;
-  color: #a94442;
-  background: #f2dede;
-  border-radius: 5px;
+  color: white; /* Белый цвет текста */
+  background: rgba(242, 222, 222, 0.8); /* Прозрачный фон */
+  border-radius: 5px; /* Скругленные края */
+  font-weight: bold; /* Жирный шрифт для лучшей видимости */
 }
 
 .success {
-  color: #3c763d;
-  background: #dff0d8;
+  color: white; /* Белый цвет текста */
+  background: rgba(223, 240, 216, 0.8); /* Прозрачный фон */
   border: 1px solid #3c763d;
   margin-bottom: 20px;
+  border-radius: 5px; /* Скругленные края */
+  font-weight: bold; /* Жирный шрифт для лучшей видимости */
 }
-
 /* Контейнер для кнопок */
 .button-container {
   display: flex;
