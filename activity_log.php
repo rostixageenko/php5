@@ -82,24 +82,10 @@ try {
 
 <header>
 <img src="image/logo5.png" alt="Логотип" class="logo"> 
-    <div class="menu">
-        <div class="dropdown">
-            <button class="button">База данных</button>
-            <div class="dropdown-content">
-                <a href="?table=users">Пользователи</a>
-                <a href="?table=auto_parts">Запчасти</a>
-                <a href="?table=orders">Заказы</a>
-                <a href="?table=customers">Покупатели</a>
-                <a href="?table=staff">Сотрудники</a>
-                <a href="?table=suppliers">Поставщики</a>
-                <a href="?table=inventory">Инвентарь</a>
-                <a href="?table=cars">Автомобили</a>
-            </div>
-        </div>
-        <button class="button">Аналитика</button>
-        <a href="activity_log.php" class="button">История операций</a>
-    </div>
-    <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
+    <p>
+    <a href="admin_interface_main.php" class="button">Назад</a>    
+    <a href="index.php?logout='1'" class="button">Выйти</a>
+</p>
 </header>
 
 <main>

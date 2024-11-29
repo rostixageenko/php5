@@ -10,8 +10,8 @@ body {
   font-family: Arial, sans-serif;
   background: #f8f8ff;
   background-image: url('image/backimage.svg'); 
-  background-size: cover; /*Масштабирует изображение, чтобы оно охватывало весь фон */
-  background-position: center; /*Центрирует изображение  */
+  background-size: cover; /* Масштабирует изображение, чтобы оно охватывало весь фон */
+  background-position: center; /* Центрирует изображение */
 }
 
 /* Стили для блока <main> */
@@ -48,7 +48,6 @@ th {
   background-color: #8f8484; /* Фон для заголовков таблицы */
 }
 
-
 /* Стили для заголовка */
 .header {
   width: 30%;
@@ -65,7 +64,7 @@ th {
 /* Стили для форм и контента */
 form, .content {
   width: 100%;
-  margin: 0px ;
+  margin: 0px;
   padding: 0px;
   border: 1px solid #ffffff;
   background: white;
@@ -74,35 +73,35 @@ form, .content {
 
 .input-group {
   margin: 10px 0px 10px 0px;
-  }
-  
-  .input-group label {
+}
+
+.input-group label {
   display: block;
   text-align: left;
   margin: 3px;
-  }
-  
-  .input-group input {
+}
+
+.input-group input {
   height: 30px;
   width: 93%;
   padding: 5px 10px;
   font-size: 16px;
   border-radius: 5px;
   border: 1px solid gray;
-  }
-  
-  /* Стили для кнопок */
-  .btn {
+}
+
+/* Стили для кнопок */
+.btn {
   padding: 10px;
   font-size: 15px;
   color: white;
   background: #8e8e8e;
   border: none;
   border-radius: 5px;
-  }
-  
-  /* Стили для сообщений об ошибках и успехе */
-  .error {
+}
+
+/* Стили для сообщений об ошибках и успехе */
+.error {
   width: 92%;
   margin: 0px auto;
   padding: 10px;
@@ -110,58 +109,56 @@ form, .content {
   color: #a94442;
   background: #f2dede;
   border-radius: 5px;
-  }
-  
-  .success {
+}
+
+.success {
   color: #3c763d;
   background: #dff0d8;
   border: 1px solid #3c763d;
   margin-bottom: 20px;
-  }
-  
-  /* Контейнер для кнопок */
-  .button-container {
+}
+
+/* Контейнер для кнопок */
+.button-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 30px;
-  }
-  
-  .button-container p {
-  margin: 0;
-  }
-  
+}
 
-  .logo {
+.button-container p {
+  margin: 0;
+}
+
+.logo {
   max-height: 50px; 
   margin-right: 20px; 
-  }
-  
-  /* Меню */
-  .menu {
+}
+
+/* Меню */
+.menu {
   display: flex;
   justify-content: center;
   flex-grow: 1;
-  }
-  
-  /* Стили для заголовка и кнопок админского интерфейса */
-  header {
+}
+
+/* Стили для заголовка и кнопок админского интерфейса */
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: #2d2d2d;
   color: white;
   padding: 10px 20px;
-  }
-  
-  
-  /* Стили для кнопок в шапке */
-  .menu {
+}
+
+/* Стили для кнопок в шапке */
+.menu {
   display: flex;
   gap: 15px;
-  }
-  
-  .button {
+}
+
+.button {
   background-color: #555;
   color: white;
   border: none;
@@ -169,23 +166,52 @@ form, .content {
   cursor: pointer;
   border-radius: 5px;
   transition: background-color 0.3s;
-  }
-  
-  .button:hover {
+}
+
+.button:hover {
   background-color: #777;
-  }
-  
-  /* Адаптивные стили */
-  @media (max-width: 600px) {
+}
+
+/* Общий стиль для всех кнопок */
+.button {
+  background-color: #5d5d5d; /* Основной цвет кнопки */
+  color: white; /* Цвет текста */
+  padding: 10px 15px; /* Отступы */
+  border: none; /* Без рамки */
+  border-radius: 5px; /* Скругленные углы */
+  cursor: pointer; /* Указатель при наведении */
+  font-size: 16px; /* Размер шрифта */
+  margin: 5px; /* Отступы между кнопками */
+  transition: background-color 0.3s, transform 0.2s; /* Плавные переходы */
+}
+
+/* Специфичный стиль для кнопок в header */
+.header .button {
+  background-color: #6d6d6d; /* Цвет кнопки в header */
+}
+
+/* Эффект при наведении для всех кнопок */
+.button:hover {
+  background-color: #4a4a4a; /* Цвет кнопки при наведении */
+  transform: scale(1.05); /* Увеличение при наведении */
+}
+
+/* Эффект при нажатии для всех кнопок */
+.button:active {
+  transform: scale(0.95); /* Уменьшение при нажатии */
+}
+
+/* Адаптивные стили */
+@media (max-width: 600px) {
   header {
-  flex-direction: column;
-  align-items: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .menu {
-  flex-direction: column;
-  align-items: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
   }
-  }
+}
 
 /* Стили для формы входа и регистрации */
 .login_register-form {
@@ -204,4 +230,43 @@ form, .content {
 
 .login_register-form input {
   width: 95%; /* Полная ширина */
+}
+
+/* Стили для выпадающего меню */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none; /* Скрыть по умолчанию */
+  position: absolute; /* Позиционирование */
+  background-color: white; /* Белый фон */
+  min-width: 160px; /* Минимальная ширина */
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); /* Тень */
+  z-index: 1; /* На переднем плане */
+}
+
+.dropdown:hover .dropdown-content {
+  display: block; /* Показать при наведении */
+}
+
+.dropdown-content a {
+  color: black; /* Цвет текста */
+  padding: 12px 16px; /* Внутренние отступы */
+  text-decoration: none; /* Убрать подчеркивание */
+  display: block; /* Блочный элемент */
+}
+
+.dropdown-content a:hover {
+  background-color: #ddd; /* Фон при наведении */
+}
+/* Убираем подчеркивание у ссылок */
+a {
+  text-decoration: none; /* Убирает подчеркивание */
+}
+
+/* Убираем подчеркивание при наведении */
+a:hover {
+  text-decoration: none; /* Убирает подчеркивание при наведении */
 }
