@@ -90,7 +90,7 @@ try {
 
 <main>
     <h1 class="title">История операций</h1>
-    <form method="POST" action="server.php">
+    <form method="POST" action="activity_log.php">
         <div class="filter-container">
             <input type="text" name="event_id" placeholder="ИД события" />
             <input type="text" name="actor_name" placeholder="Действующее лицо" />
