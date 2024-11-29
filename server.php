@@ -164,6 +164,6 @@ if (isset($_POST['search'])) {
     header('Location: activity_log.php');
     exit(); 
 }
-?>
+
 
 ?>

@@ -80,7 +80,7 @@ $selectedTable = isset($_GET['table']) ? $_GET['table'] : 'users'; // По ум�
 <body>
 
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo"> 
+<img src="image/logo5.png" alt="Логотип" class="logo"> 
     <div class="menu">
         <div class="dropdown">
             <button class="button">База данных</button>
