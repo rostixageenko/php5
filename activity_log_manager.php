@@ -2,7 +2,7 @@
 
 include 'db.php'; 
 include 'sessionConf.php';
-// require 'vendor/autoload.php'; // Убедитесь, что вы установили PhpSpreadsheet через Composer
+require 'vendor/autoload.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $search_query = '';
@@ -50,6 +50,7 @@ try {
 
         $query .= "
             ORDER BY $order_by $order_dir
+            LIMIT 15
         ";
 
         $result = $conn->query($query);
@@ -115,8 +116,10 @@ try {
             $query .= " AND sys_activity_log.action LIKE ?";
             $params[] = "%$action%";
         }
+        
         $query .= "
             ORDER BY $order_by $order_dir
+            LIMIT 15
         ";
         
         // Подготовка и выполнение запроса

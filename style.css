@@ -101,14 +101,12 @@ form, .content {
 }
 
 .error {
-  width: 92%;
-  margin: 0 auto;
-  padding: 10px;
-  border: 1px solid #a94442;
   color: white; /* Белый цвет текста */
-  background: rgba(242, 222, 222, 0.8); /* Прозрачный фон */
+  background: rgba(223, 240, 216, 0.8); /* Прозрачный фон */
+  border: 1px solid #a94442;
+  margin-bottom: 20px;
   border-radius: 5px; /* Скругленные края */
-  font-weight: bold; /* Жирный шрифт для лучшей видимости */
+  font-weight: bold;
 }
 
 .success {

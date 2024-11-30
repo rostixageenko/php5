@@ -75,17 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users') {
     if (!empty($login) && !empty($password) && !empty($type_role)) {
         $hashedPassword = md5($password);
 
-        $stmt = $db->prepare("INSERT INTO users (id, login, password, type_role) VALUES (UUID(),?, ?, ?)");
+        $stmt = $db->prepare("INSERT INTO users ( login, password, type_role) VALUES ( ?, ?, ?)");
         $stmt->bind_param("sss", $login, $hashedPassword, $type_role);
         
-        if ($stmt->execute()) {
-            $message = "Пользователь добавлен успешно.";
-            $messageType = "success"; // Успешное сообщение
-            $users = $usersTable->fetch(); // Обновляем данные
-        } else {
-            $message = "Ошибка добавления пользователя.";
-            $messageType = "error"; // Ошибка
+        try {
+            if ($stmt->execute()) {
+                $message = "Пользователь добавлен успешно.";
+                $messageType = "success"; // Успешное сообщение
+                $users = $usersTable->fetch(); // Обновляем данные
+            }
+        } catch (mysqli_sql_exception $e) {
+            // Обрабатываем ошибку уникальности
+            if ($e->getCode() === 1062) { // Код ошибки для дублирования
+                $message = "Пользователь с таким логином уже существует.";
+                $messageType = "error"; // Ошибка
+            } else {
+                $message = "Ошибка добавления пользователя: " . $e->getMessage();
+                $messageType = "error"; // Ошибка
+            }
         }
+        
         $stmt->close();
     } else {
         $message = "Пожалуйста, заполните все поля.";

@@ -42,8 +42,8 @@ if (count($errors) == 0) {
     $password = md5($password_1); // Хешируем пароль юзера
 
     // Исправленный запрос для вставки данных в таблицу users
-    $query = "INSERT INTO users (id, login, password, type_role) 
-              VALUES (UUID(), '$login', '$password', '0')";
+    $query = "INSERT INTO users (login, password, type_role) 
+              VALUES ( '$login', '$password', '0')";
     
     mysqli_query($db, $query); // Выполняем запрос
     
