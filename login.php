@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход</title>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        .error {
+            color: white; /* Белый цвет текста */
+            background: #fc3030; /* Непрозрачный красный фон */
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px; /* Скругленные края */
+        }
+    </style>
 </head>
 <body>
     <div class="header">

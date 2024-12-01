@@ -25,6 +25,14 @@ if (isset($_GET['logout'])) {
             padding: 10px;
             border-radius: 8px; /* Скругленные края */
         }
+        .error {
+            color: white; /* Белый цвет текста */
+            background: #a94442; /* Непрозрачный красный фон */
+            border: 1px solid #3c763d;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px; /* Скругленные края */
+        }
     </style>
 </head>
 <body>

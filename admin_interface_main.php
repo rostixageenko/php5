@@ -20,11 +20,8 @@ include('table_func.php'); // Подключаем файл с функциям�
         .tables-container {
             flex-grow: 1; /* Занимает оставшееся пространство */
         }
-        .success {
+        .success, .error {
             color: white; /* Белый цвет текста */
-            background: rgba(76, 175, 80, 0.8); /* Прозрачный фон */
-            border: 1px solid #3c763d;
-            margin-bottom: 20px;
             padding: 10px;
             position: fixed;
             top: 20px;
@@ -34,19 +31,16 @@ include('table_func.php'); // Подключаем файл с функциям�
             display: none; /* Скрыто по умолчанию */
             border-radius: 8px; /* Скругленные края */
         }
+        .success {
+            background: rgba(76, 175, 80, 0.8); /* Прозрачный фон */
+            border: 1px solid #3c763d;
+        }
         .error {
-            color: white; /* Белый цвет текста */
             background: rgba(192, 57, 43, 0.8); /* Прозрачный фон */
             border: 1px solid #a94442;
-            margin-bottom: 20px;
-            padding: 10px;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: none; /* Скрыто по умолчанию */
-            border-radius: 8px; /* Скругленные края */
+        }
+        .input-group {
+            margin-bottom: 15px; /* Отступ между полями */
         }
     </style>
 </head>
@@ -79,13 +73,44 @@ include('table_func.php'); // Подключаем файл с функциям�
         <div class="form-container">
             <h2>Добавить пользователя</h2>
             <form method="POST" action="?table=users">
-                <input type="text" name="login" placeholder="Логин" required>
-                <input type="password" name="password" placeholder="Пароль" required>
-                <input type="text" name="type_role" placeholder="Тип роли" required>
+                <div class="input-group">
+                    <input type="text" name="login" placeholder="Логин" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" placeholder="Пароль" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="type_role" placeholder="Тип роли" required>
+                </div>
                 <button type="submit" class="btn">Добавить</button>
             </form>
+
+            <h2>Изменить пароль пользователя</h2>
+            <form method="POST" action="?table=users&action=change_password">
+                <div class="input-group">
+                    <input type="text" name="change_login" placeholder="Логин пользователя" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="new_password" placeholder="Новый пароль" required>
+                </div>
+                <button type="submit" class="btn">Изменить</button>
+            </form>
+
+            <h2>Поиск пользователей</h2>
+            <form method="POST" action="?table=users">
+                <div class="input-group">
+                    <input type="text" name="id" placeholder="ID пользователя">
+                </div>
+                <div class="input-group">
+                    <input type="text" name="login" placeholder="Логин">
+                </div>
+                <div class="input-group">
+                    <input type="text" name="type_role" placeholder="Тип роли (0, 1 или 2)">
+                </div>
+                <button type="submit" name="search_users" class="btn">Поиск</button>
+            </form>
         </div>
-        
+
         <div class="tables-container">
             <?php
                 // В зависимости от выбранной таблицы, отображаем ее
@@ -126,6 +151,8 @@ include('table_func.php'); // Подключаем файл с функциям�
 <div id="popup-message" class="<?php echo $messageType; ?>" style="<?php echo !empty($message) ? 'display:block;' : ''; ?>">
     <?php if (!empty($message)) echo $message; ?>
 </div>
+
+
 
 <!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>

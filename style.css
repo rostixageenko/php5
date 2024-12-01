@@ -48,6 +48,13 @@ th {
   background-color: #8f8484; /* Фон для заголовков таблицы */
 }
 
+/* Стили для ячейки с кнопкой удаления */
+.table-cell-delete {
+  background-color: #d3d3d3; /* Светло-серый фон для ячейки */
+  text-align: center; /* Центрируем содержимое */
+  padding: 10px; /* Внутренние отступы */
+}
+
 /* Стили для заголовка */
 .header {
   width: 30%;
@@ -95,15 +102,40 @@ form, .content {
   padding: 10px;
   font-size: 15px;
   color: white;
-  background: #8e8e8e;
+  background: #8e8e8e; /* Серый фон для кнопок */
   border: none;
   border-radius: 5px;
+  cursor: pointer; /* Указатель при наведении */
+  margin-bottom: 15px; /* Увеличенный отступ снизу */
 }
 
+/* Стили для кнопки удаления */
+.delete-btn {
+  background-color: #8e8e8e; /* Серый фон для кнопки удаления */
+  color: white; /* Цвет текста */
+  padding: 10px 15px; /* Отступы */
+  border: none; /* Убираем рамку */
+  border-radius: 5px; /* Скругленные углы */
+  cursor: pointer; /* Указатель при наведении */
+  transition: background-color 0.3s, transform 0.2s; /* Плавные переходы */
+}
+
+/* Эффект при наведении для кнопки удаления */
+.delete-btn:hover {
+  background-color: #dc3545; /* Красный фон при наведении */
+  transform: scale(1.05); /* Увеличение при наведении */
+}
+
+/* Эффект при нажатии для кнопки удаления */
+.delete-btn:active {
+  transform: scale(0.95); /* Уменьшение при нажатии */
+}
+
+/* Стили для сообщений об ошибках и успехах */
 .error {
   color: white; /* Белый цвет текста */
   background: rgba(223, 240, 216, 0.8); /* Прозрачный фон */
-  border: 1px solid #a94442;
+  border: 1px solid #fc3030;
   margin-bottom: 20px;
   border-radius: 5px; /* Скругленные края */
   font-weight: bold;
@@ -117,6 +149,7 @@ form, .content {
   border-radius: 5px; /* Скругленные края */
   font-weight: bold; /* Жирный шрифт для лучшей видимости */
 }
+
 /* Контейнер для кнопок */
 .button-container {
   display: flex;
@@ -158,21 +191,6 @@ header {
 }
 
 .button {
-  background-color: #555;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-}
-
-.button:hover {
-  background-color: #777;
-}
-
-/* Общий стиль для всех кнопок */
-.button {
   background-color: #5d5d5d; /* Основной цвет кнопки */
   color: white; /* Цвет текста */
   padding: 10px 15px; /* Отступы */
@@ -182,11 +200,6 @@ header {
   font-size: 16px; /* Размер шрифта */
   margin: 5px; /* Отступы между кнопками */
   transition: background-color 0.3s, transform 0.2s; /* Плавные переходы */
-}
-
-/* Специфичный стиль для кнопок в header */
-.header .button {
-  background-color: #6d6d6d; /* Цвет кнопки в header */
 }
 
 /* Эффект при наведении для всех кнопок */
@@ -260,6 +273,7 @@ header {
 .dropdown-content a:hover {
   background-color: #ddd; /* Фон при наведении */
 }
+
 /* Убираем подчеркивание у ссылок */
 a {
   text-decoration: none; /* Убирает подчеркивание */
