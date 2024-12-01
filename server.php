@@ -51,9 +51,17 @@ if (count($errors) == 0) {
     $query1 = "INSERT INTO customers (id, login) 
                 SELECT id, login FROM users 
                 WHERE login = '$login'"; // Убедитесь, что мы вставляем только что созданного пользователя
+    
+    $query2 = "SELECT id FROM users 
+                WHERE login = '$login'";
 
     mysqli_query($db, $query1); // Выполняем запрос
+    $row = mysqli_fetch_assoc(mysqli_query($db, $query2));
+    $id_user= $row["id"];
+    $Actstr = "Пользователь $login типа '0' зарегистрировался в системе.";
+    $dbExecutor->insertAction($id_user, $Actstr);
 
+    $_SESSION['user_id'] =$id_user;
     $_SESSION['login'] = $login;
     $_SESSION['success'] = "Вы успешно вошли в систему";
     $_SESSION['type_role'] = 0; 

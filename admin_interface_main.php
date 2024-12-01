@@ -85,6 +85,14 @@ include('table_func.php'); // Подключаем файл с функциям�
                 <button type="submit" class="btn">Добавить</button>
             </form>
 
+            <h2>Вывод данных</h2>
+            <form method="POST" action="?table=<?php echo $selectedTable; ?>">
+                <div class="input-group">
+                    <input type="number" name="row_count" placeholder="Количество строк" required min="1">
+                </div>
+                <button type="submit" class="btn">Вывести</button>
+            </form>
+
             <h2>Изменить пароль пользователя</h2>
             <form method="POST" action="?table=users&action=change_password">
                 <div class="input-group">
@@ -113,30 +121,40 @@ include('table_func.php'); // Подключаем файл с функциям�
 
         <div class="tables-container">
             <?php
-                // В зависимости от выбранной таблицы, отображаем ее
+                // Вывод данных с учетом ограничения
+                $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
+
                 switch ($selectedTable) {
                     case 'users':
+                        $users = $usersTable->fetchLimited($rowCount);
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':
+                        $parts = $partsTable->fetchLimited($rowCount);
                         $partsTable->renderTable($parts, 'Запчасти');
                         break;
                     case 'orders':
+                        $orders = $ordersTable->fetchLimited($rowCount);
                         $ordersTable->renderTable($orders, 'Заказы');
                         break;
                     case 'customers':
+                        $customers = $customersTable->fetchLimited($rowCount);
                         $customersTable->renderTable($customers, 'Покупатели');
                         break;
                     case 'staff':
+                        $staffs = $staffsTable->fetchLimited($rowCount);
                         $staffsTable->renderTable($staffs, 'Сотрудники');
                         break;
                     case 'suppliers':
+                        $suppliers = $suppliersTable->fetchLimited($rowCount);
                         $suppliersTable->renderTable($suppliers, 'Поставщики');
                         break;
                     case 'inventory':
+                        $inventory = $inventoryTable->fetchLimited($rowCount);
                         $inventoryTable->renderTable($inventory, 'Инвентарь');
                         break;
                     case 'cars':
+                        $cars = $carsTable->fetchLimited($rowCount);
                         $carsTable->renderTable($cars, 'Автомобили');
                         break;
                     default:
@@ -151,8 +169,6 @@ include('table_func.php'); // Подключаем файл с функциям�
 <div id="popup-message" class="<?php echo $messageType; ?>" style="<?php echo !empty($message) ? 'display:block;' : ''; ?>">
     <?php if (!empty($message)) echo $message; ?>
 </div>
-
-
 
 <!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>

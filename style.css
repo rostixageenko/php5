@@ -69,12 +69,23 @@ th {
 }
 
 /* Стили для форм и контента */
+/* Существующий стиль для форм */
 form, .content {
   width: 100%;
   margin: 0px;
   padding: 0px;
   border: 1px solid #ffffff;
   background: white;
+  border-radius: 0px 0px 10px 10px;
+}
+
+/* Новый стиль для формы удаления */
+.delete-form {
+  width: 100%;
+  margin: 0px;
+  padding: 0px;
+  border: 1px solid #d3d3d3; /* Серые границы */
+  background: #d3d3d3; /* Светло-серый фон */
   border-radius: 0px 0px 10px 10px;
 }
 

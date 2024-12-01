@@ -16,6 +16,15 @@ class TableFunction {
         return $this->executeQuery($query);
     }
 
+    public function fetchLimited($limit, $conditions = []) {
+        $query = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
+        if (!empty($conditions)) {
+            $query .= " WHERE " . implode(" AND ", $conditions);
+        }
+        $query .= " LIMIT " . intval($limit);
+        return $this->executeQuery($query);
+    }
+
     private function executeQuery($query) {
         $result = mysqli_query($this->db, $query);
         return mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -24,12 +33,11 @@ class TableFunction {
     public function deleteUser($id) {
         $stmt = $this->db->prepare("DELETE FROM " . $this->tableName . " WHERE id = ?");
         $stmt->bind_param("i", $id);
-    
         try {
             if ($stmt->execute() && $stmt->affected_rows > 0) {
-                return "Пользователь успешно удален.";
+                return 1;
             } else {
-                return "Ошибка: пользователь не найден или не удалось удалить.";
+                return 0;
             }
         } catch (mysqli_sql_exception $e) {
             return "Ошибка удаления пользователя: " . $e->getMessage();
@@ -55,10 +63,10 @@ class TableFunction {
                     echo "<td>" . htmlspecialchars($cell) . "</td>";
                 }
                 // Кнопка удаления
-                echo "<td class='table-cell-delete'>"; // Добавляем класс для центрирования
-                echo "<form method='POST' action='?table=users&action=delete'>";
+                echo "<td class='table-cell-delete'>";
+                echo "<form method='POST' action='?table=users&action=delete' class='delete-form'>";
                 echo "<input type='hidden' name='id' value='" . htmlspecialchars($row['id']) . "'>";
-                echo "<button type='submit' class='delete-btn'>Удалить</button>"; // Применяем новый класс
+                echo "<button type='submit' class='delete-btn'>Удалить</button>";
                 echo "</form>";
                 echo "</td>";
                 echo "</tr>";
@@ -76,7 +84,26 @@ include('server.php');
 $selectedTable = isset($_GET['table']) ? $_GET['table'] : 'users';
 
 $usersTable = new TableFunction($db, 'users');
-// Другие таблицы...
+$partsTable = new TableFunction($db, 'auto_parts');
+$ordersTable = new TableFunction($db, 'orders');
+$customersTable = new TableFunction($db, 'Customers');
+$staffsTable = new TableFunction($db, 'Staff');
+$suppliersTable = new TableFunction($db, 'suppliers');
+$inventoryTable = new TableFunction($db, 'Inventory');
+$carsTable = new TableFunction($db, 'Cars');
+
+// Получение количества строк для отображения
+$rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
+
+// Получение данных с учетом ограничения
+$users = $usersTable->fetchLimited($rowCount);
+$parts = $partsTable->fetchLimited($rowCount);
+$orders = $ordersTable->fetchLimited($rowCount);
+$customers = $customersTable->fetchLimited($rowCount);
+$staffs = $staffsTable->fetchLimited($rowCount);
+$suppliers = $suppliersTable->fetchLimited($rowCount);
+$inventory = $inventoryTable->fetchLimited($rowCount);
+$cars = $carsTable->fetchLimited($rowCount);
 
 $message = "";
 $messageType = "success"; // По умолчанию тип сообщения
@@ -143,6 +170,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
                 
                 try {
                     if ($stmt->execute()) {
+                        $old_login = $_SESSION['login'];
+                        $old_id_user = $_SESSION['user_id'];
+                
+                        $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login.";
+                        $dbExecutor->insertAction($old_id_user, $Actstr);
+
                         $message = "Пользователь добавлен успешно.";
                         $messageType = "success"; // Успешное сообщение
                         $users = $usersTable->fetch(); // Обновляем данные
@@ -174,6 +207,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
         
         try {
             if ($stmt->execute() && $stmt->affected_rows > 0) {
+                $login = $_SESSION['login'];
+                $id_user = $_SESSION['user_id'];
+                
+                $Actstr = "Пользователь $login типа '0' изменил пароль пользователю $change_login.";
+                $dbExecutor->insertAction($id_user, $Actstr);
                 $message = "Пароль пользователя изменен успешно.";
                 $messageType = "success"; // Успешное сообщение
             } else {
@@ -200,12 +238,12 @@ if (!empty($message)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
-    if ($id > 0) {
-        $message = $usersTable->deleteUser($id); // Вызов метода удаления
+    if ($id > 0 && $usersTable->deleteUser($id)===1) {
+        $message ="Пользователь успешно удален." ; // Вызов метода удаления
         $messageType = "success"; // Успешное сообщение
         $users = $usersTable->fetch(); // Обновляем данные
     } else {
-        $message = "Некорректный ID пользователя.";
+        $message ="Ошибка: пользователь не найден или не удалось удалить.";
         $messageType = "error"; // Ошибка
     }
 }
