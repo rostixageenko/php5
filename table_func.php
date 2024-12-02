@@ -111,6 +111,7 @@ $messageType = "success"; // По умолчанию тип сообщения
 // Поиск пользователей
 $searchConditions = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
+    $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
     $id = isset($_POST['id']) ? trim($_POST['id']) : '';
     $login = isset($_POST['login']) ? trim($_POST['login']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
@@ -118,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
     // Добавляем условия поиска только для заполненных полей
     if (!empty($id)) {
         $searchConditions[] = "id = " . intval($id);
+        //file_put_contents($file, 1);
     }
     if (!empty($login)) {
         $searchConditions[] = "login LIKE '%" . mysqli_real_escape_string($db, $login) . "%'";
@@ -125,8 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
     if (!empty($type_role) && in_array((int)$type_role, [0, 1, 2])) {
         $searchConditions[] = "type_role = " . intval($type_role);
     }
-
-    $users = $usersTable->fetch($searchConditions);
+    //file_put_contents($file, 1);
+    $users_search = $usersTable->fetch($searchConditions);
     
     // Проверка, есть ли результаты
     if (empty($users)) {
@@ -234,11 +236,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
 if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
-
+ //удаление пользователя
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-
+    $row = mysqli_fetch_assoc(mysqli_query($db, "SELECT login FROM users WHERE id='$id'"));
+    $login_delete_user= $row['login'];
     if ($id > 0 && $usersTable->deleteUser($id)===1) {
+                $login = $_SESSION['login'];
+                $id_user = $_SESSION['user_id'];
+    
+                $Actstr = "Пользователь $login типа '0' удалил пользователя $login_delete_user.";
+                $dbExecutor->insertAction($id_user, $Actstr);
+                
         $message ="Пользователь успешно удален." ; // Вызов метода удаления
         $messageType = "success"; // Успешное сообщение
         $users = $usersTable->fetch(); // Обновляем данные
