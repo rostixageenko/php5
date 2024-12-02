@@ -111,7 +111,7 @@ $messageType = "success"; // По умолчанию тип сообщения
 // Поиск пользователей
 $searchConditions = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
-    $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
+   // $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
     $id = isset($_POST['id']) ? trim($_POST['id']) : '';
     $login = isset($_POST['login']) ? trim($_POST['login']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
@@ -128,8 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
         $searchConditions[] = "type_role = " . intval($type_role);
     }
     //file_put_contents($file, 1);
-    $users_search = $usersTable->fetch($searchConditions);
-    
+    $users = $usersTable->fetch($searchConditions);
     // Проверка, есть ли результаты
     if (empty($users)) {
         $message = "Пользователи не найдены.";
@@ -167,6 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
             } else {
                 $hashedPassword = md5($password);
 
+                // Вставка в таблицу users
                 $stmt = $db->prepare("INSERT INTO users (login, password, type_role) VALUES (?, ?, ?)");
                 $stmt->bind_param("ssi", $login, $hashedPassword, $type_role);
                 
@@ -175,8 +175,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
                         $old_login = $_SESSION['login'];
                         $old_id_user = $_SESSION['user_id'];
                 
-                        $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login.";
+                        $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login типа $type_role.";
                         $dbExecutor->insertAction($old_id_user, $Actstr);
+
+                        // Вставка в таблицу staff или customers в зависимости от type_role
+                        switch ($type_role) {
+                            case 1:
+                                // Вставка в таблицу staff с idpost = 9
+                                $stmt_staff = $db->prepare("INSERT INTO staff (login, idpost) VALUES (?, 9)");
+                                $stmt_staff->bind_param("s", $login);
+                                $stmt_staff->execute();
+                                $stmt_staff->close();
+                                break;
+
+                            case 2:
+                                // Вставка в таблицу staff без idpost
+                                $stmt_staff = $db->prepare("INSERT INTO staff (login) VALUES (?)");
+                                $stmt_staff->bind_param("s", $login);
+                                $stmt_staff->execute();
+                                $stmt_staff->close();
+                                break;
+
+                            case 0:
+                                // Вставка в таблицу customers
+                                $stmt_customers = $db->prepare("INSERT INTO customers (login) VALUES (?)");
+                                $stmt_customers->bind_param("s", $login);
+                                $stmt_customers->execute();
+                                $stmt_customers->close();
+                                break;
+                        }
 
                         $message = "Пользователь добавлен успешно.";
                         $messageType = "success"; // Успешное сообщение
@@ -237,24 +264,57 @@ if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
  //удаление пользователя
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
+ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-    $row = mysqli_fetch_assoc(mysqli_query($db, "SELECT login FROM users WHERE id='$id'"));
-    $login_delete_user= $row['login'];
-    if ($id > 0 && $usersTable->deleteUser($id)===1) {
-                $login = $_SESSION['login'];
-                $id_user = $_SESSION['user_id'];
+
+    // Получаем login и type_role пользователя
+    $stmt = $db->prepare("SELECT login, type_role FROM $selectedTable WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
     
-                $Actstr = "Пользователь $login типа '0' удалил пользователя $login_delete_user.";
-                $dbExecutor->insertAction($id_user, $Actstr);
-                
-        $message ="Пользователь успешно удален." ; // Вызов метода удаления
-        $messageType = "success"; // Успешное сообщение
-        $users = $usersTable->fetch(); // Обновляем данные
+    if ($row) {
+        $login_delete_user = $row['login'];
+        $type_role = $row['type_role'];
+
+        // Удаляем пользователя из таблицы users
+        if ($usersTable->deleteUser($id) === 1) {
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            
+            // Логируем действие
+            $Actstr = "Пользователь $login типа '0' удалил пользователя $login_delete_user.";
+            $dbExecutor->insertAction($id_user, $Actstr);
+
+            // Удаляем из соответствующей таблицы
+            if ($type_role == 0) {
+                // Удаляем из таблицы customers
+                $stmt_customers = $db->prepare("DELETE FROM customers WHERE login = ?");
+                $stmt_customers->bind_param("s", $login_delete_user);
+                $stmt_customers->execute();
+                $stmt_customers->close();
+            } elseif ($type_role == 1 || $type_role == 2) {
+                // Удаляем из таблицы staff
+                $stmt_staff = $db->prepare("DELETE FROM staff WHERE login = ?");
+                $stmt_staff->bind_param("s", $login_delete_user);
+                $stmt_staff->execute();
+                $stmt_staff->close();
+            }
+
+            $message = "Пользователь успешно удален."; // Успешное сообщение
+            $messageType = "success"; // Успешное сообщение
+            $users = $usersTable->fetch(); // Обновляем данные
+        } else {
+            $message = "Ошибка: пользователь не найден или не удалось удалить.";
+            $messageType = "error"; // Ошибка
+        }
     } else {
-        $message ="Ошибка: пользователь не найден или не удалось удалить.";
+        $message = "Ошибка: пользователь не найден.";
         $messageType = "error"; // Ошибка
     }
+
+    $stmt->close();
 }
 
 ?>

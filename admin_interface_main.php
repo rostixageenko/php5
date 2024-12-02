@@ -1,5 +1,5 @@
 <?php
-include('table_func.php'); // Подключаем файл с функциями и классами
+include('table_func.php');// Подключаем файл с функциями и классами
 ?>
 
 <!DOCTYPE html>
@@ -126,7 +126,7 @@ include('table_func.php'); // Подключаем файл с функциям�
 
                 switch ($selectedTable) {
                     case 'users':
-                        $users = $usersTable->fetchLimited($rowCount);
+                            $users = $usersTable->fetchLimited($rowCount);
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':
