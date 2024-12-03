@@ -47,20 +47,44 @@ class TableFunction {
     }
 
     public function renderTable($data, $title) {
-        echo "<h2>$title</h2>";
+        echo "<h2>" . htmlspecialchars($title) . "</h2>";
         if (count($data) > 0) {
             echo "<table>";
             echo "<tr>";
+            
+            // Выводим заголовки столбцов
             foreach (array_keys($data[0]) as $key) {
                 echo "<th>" . htmlspecialchars($key) . "</th>";
             }
-            echo "<th>Действия</th>"; // Новый заголовок для действий
+            echo "<th>Действия</th>"; // Заголовок для действий
             echo "</tr>";
             
             foreach ($data as $row) {
                 echo "<tr>";
-                foreach ($row as $cell) {
-                    echo "<td>" . htmlspecialchars($cell) . "</td>";
+                foreach ($row as $key => $cell) {
+                    // Проверяем, является ли ячейка строкой и содержит ли корректный JSON
+                    if (is_string($cell) && $this->is_json($cell)) {
+                        // Декодируем JSON и выводим его как таблицу
+                        $jsonData = json_decode($cell, true);
+                        echo "<td>";
+                        echo "<table class='nested-json'>";
+
+                        // Проверяем, является ли декодированное значение массивом
+                        if (is_array($jsonData)) {
+                            foreach ($jsonData as $jsonKey => $jsonValue) {
+                                echo "<tr><td>" . htmlspecialchars($jsonKey) . "</td><td>" . htmlspecialchars($jsonValue) . "</td></tr>";
+                            }
+                        } else {
+                            // Если это не массив, выводим сообщение
+                            echo "<tr><td colspan='2'>Некорректные данные</td></tr>";
+                        }
+
+                        echo "</table>";
+                        echo "</td>";
+                    } else {
+                        // Обычная ячейка (число или строка)
+                        echo "<td>" . htmlspecialchars($cell) . "</td>";
+                    }
                 }
                 // Кнопка удаления
                 echo "<td class='table-cell-delete'>";
@@ -75,6 +99,16 @@ class TableFunction {
         } else {
             echo "<p>Нет данных для отображения.</p>";
         }
+    }
+
+    // Публичная функция для проверки, является ли строка JSON
+    public function is_json($string) {
+        // Проверяем, является ли строка не пустой и начинается с '{' или '['
+        if (!is_string($string) || empty($string) || !($string[0] === '{' || $string[0] === '[')) {
+            return false;
+        }
+        json_decode($string);
+        return (json_last_error() === JSON_ERROR_NONE);
     }
 }
 

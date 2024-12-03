@@ -45,9 +45,8 @@ include('table_func.php');// Подключаем файл с функциями
     </style>
 </head>
 <body>
-
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo"> 
+    <img src="image/logo5.png" alt="Логотип" class="logo">
     <div class="menu">
         <div class="dropdown">
             <button class="button">База данных</button>
@@ -120,13 +119,15 @@ include('table_func.php');// Подключаем файл с функциями
         </div>
 
         <div class="tables-container">
-            <?php
+            <div class="table-scroll">
+                <?php
                 // Вывод данных с учетом ограничения
                 $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
 
                 switch ($selectedTable) {
                     case 'users':
-                            $users = $usersTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_users'])) {
+                         $users = $usersTable->fetchLimited($rowCount);}
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':
@@ -160,7 +161,8 @@ include('table_func.php');// Подключаем файл с функциями
                     default:
                         echo "<p>Выберите таблицу из базы данных.</p>";
                 }
-            ?>
+                ?>
+            </div>
         </div>
     </div>
 </main>
@@ -172,6 +174,5 @@ include('table_func.php');// Подключаем файл с функциями
 
 <!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>
-
 </body>
 </html>
