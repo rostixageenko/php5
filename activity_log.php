@@ -36,12 +36,16 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     $sheet->setCellValue('C1', 'Дата и время действия');
     $sheet->setCellValue('D1', 'Действие');
 
+    // Заполнение данными из всей таблицы sys_activity_log
+    $query = "SELECT * FROM sys_activity_log"; // Запрос для получения всех данных
+    $result = $conn->query($query);
+    
     // Заполнение данными
     $row = 2; // Начинаем со второй строки
     if ($result->num_rows > 0) {
         while ($data = $result->fetch_assoc()) {
             $sheet->setCellValue('A' . $row, $data['id']);
-            $sheet->setCellValue('B' . $row, $data['login']);
+            $sheet->setCellValue('B' . $row, $data['actor_id']);
             $sheet->setCellValue('C' . $row, $data['action_datetime']);
             $sheet->setCellValue('D' . $row, $data['action']);
             $row++;
