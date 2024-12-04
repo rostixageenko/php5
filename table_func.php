@@ -1,6 +1,6 @@
 <?php
 class TableFunction {
-    protected $db;
+    public $db;
     protected $tableName;
 
     public function __construct($dbConnection, $tableName) {
@@ -45,7 +45,6 @@ class TableFunction {
             $stmt->close();
         }
     }
-
     public function renderTable($data, $title) {
         echo "<h2>" . htmlspecialchars($title) . "</h2>";
         if (count($data) > 0) {
@@ -64,22 +63,35 @@ class TableFunction {
                 foreach ($row as $key => $cell) {
                     // Проверяем, является ли ячейка строкой и содержит ли корректный JSON
                     if (is_string($cell) && $this->is_json($cell)) {
-                        // Декодируем JSON и выводим его как таблицу
+                        // Декодируем JSON
                         $jsonData = json_decode($cell, true);
                         echo "<td>";
-                        echo "<table class='nested-json'>";
-
+    
                         // Проверяем, является ли декодированное значение массивом
                         if (is_array($jsonData)) {
+                            $listItems = [];
                             foreach ($jsonData as $jsonKey => $jsonValue) {
-                                echo "<tr><td>" . htmlspecialchars($jsonKey) . "</td><td>" . htmlspecialchars($jsonValue) . "</td></tr>";
+                                // Формируем строку для списка
+                                $listItems[] = htmlspecialchars($jsonKey) . ": " . htmlspecialchars($jsonValue);
                             }
+                            // Выводим список
+                            echo implode("; ", $listItems);
                         } else {
                             // Если это не массив, выводим сообщение
-                            echo "<tr><td colspan='2'>Некорректные данные</td></tr>";
+                            echo "Некорректные данные";
                         }
-
-                        echo "</table>";
+    
+                        echo "</td>";
+                    } elseif ($key === 'photo' && !empty($cell)) {
+                        // Если это поле для изображения, выводим его
+                        echo "<td>";
+                        // Проверяем, что содержимое является BLOB-данными
+                        if (is_string($cell)) {
+                            // Выводим изображение
+                            echo "<img src='data:image/jpg;base64," . base64_encode($cell) . "' alt='Изображение' style='max-width: 100px; height: auto;'>";
+                        } else {
+                            echo "Изображение недоступно";
+                        }
                         echo "</td>";
                     } else {
                         // Обычная ячейка (число или строка)
@@ -176,16 +188,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
 }
 
 // Добавление нового пользователя
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isset($_POST['search_users'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isset($_POST['search_users'])) 
+{
     $login = isset($_POST['login']) ? trim($_POST['login']) : '';
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
-
-    if (!empty($login) && !empty($password)) {
-        if (!is_numeric($type_role) || !in_array((int)$type_role, [0, 1, 2])) {
-            $message = "Тип роли должен быть 0, 1 или 2.";
-            $messageType = "error"; // Ошибка
-        } else {
+    $garage_id = isset($_POST['garage_id']) ? trim($_POST['garage_id']) : ''; // Получаем ID гаража
+    // $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
+    // file_put_contents($file, $garage_id);
+    if (!empty($login) && !empty($password)) 
+    {
             // Проверка на существование логина
             $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE login = ?");
             $stmt->bind_param("s", $login);
@@ -198,37 +210,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
                 $message = "Пользователь с таким логином уже существует.";
                 $messageType = "error"; // Ошибка
             } else {
-                $hashedPassword = md5($password);
+                // Проверка на существование ID гаража
+                $stmt_garage = $db->prepare("SELECT COUNT(*) FROM garage WHERE id = ?");
+                $stmt_garage->bind_param("i", $garage_id);
+                $stmt_garage->execute();
+                $stmt_garage->bind_result($garage_count);
+                $stmt_garage->fetch();
+                $stmt_garage->close();
 
-                // Вставка в таблицу users
-                $stmt = $db->prepare("INSERT INTO users (login, password, type_role) VALUES (?, ?, ?)");
-                $stmt->bind_param("ssi", $login, $hashedPassword, $type_role);
-                
-                try {
-                    if ($stmt->execute()) {
-                        $old_login = $_SESSION['login'];
-                        $old_id_user = $_SESSION['user_id'];
-                
-                        $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login типа $type_role.";
-                        $dbExecutor->insertAction($old_id_user, $Actstr);
+                if ($garage_count === 0 && !empty($garage_id)){
+                    $message = "ID гаража не существует.";
+                    $messageType = "error"; // Ошибка
+                } else {
+                    $hashedPassword = md5($password);
 
-                        // Вставка в таблицу staff или customers в зависимости от type_role
-                        switch ($type_role) {
-                            case 1:
-                                // Вставка в таблицу staff с idpost = 9
-                                $stmt_staff = $db->prepare("INSERT INTO staff (login, idpost) VALUES (?, 9)");
-                                $stmt_staff->bind_param("s", $login);
-                                $stmt_staff->execute();
-                                $stmt_staff->close();
-                                break;
+                    // Вставка в таблицу users
+                    $stmt = $db->prepare("INSERT INTO users (login, password, type_role) VALUES (?, ?, ?)");
+                    $stmt->bind_param("ssi", $login, $hashedPassword, $type_role);
+                    
+                    try {
+                        if ($stmt->execute()) {
+                            $old_login = $_SESSION['login'];
+                            $old_id_user = $_SESSION['user_id'];
+                    
+                            $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login типа $type_role.";
+                            $dbExecutor->insertAction($old_id_user, $Actstr);
 
-                            case 2:
-                                // Вставка в таблицу staff без idpost
-                                $stmt_staff = $db->prepare("INSERT INTO staff (login) VALUES (?)");
-                                $stmt_staff->bind_param("s", $login);
-                                $stmt_staff->execute();
-                                $stmt_staff->close();
-                                break;
+                            // Вставка в таблицу staff или customers в зависимости от type_role
+                            switch ($type_role) {
+                                case 1:
+                                    // Вставка в таблицу staff с idpost = 9
+                                    $stmt_staff = $db->prepare("INSERT INTO staff (login, idpost) VALUES (?, 9)");
+                                    $stmt_staff->bind_param("s", $login);
+                                    $stmt_staff->execute();
+                                    $idstaff = $stmt_staff->insert_id; // Получаем ID нового сотрудника
+                                    $stmt_staff->close();
+
+                                    // Вставка в staff_garage
+                                    $stmt_garage = $db->prepare("INSERT INTO staff_garage (idstaff, idgarage) VALUES (?, 15)");
+                                    $stmt_garage->bind_param("i", $idstaff);
+                                    $stmt_garage->execute();
+                                    $stmt_garage->close();
+                                    break;
+
+                                case 2:
+                                    // Вставка в таблицу staff без idpost
+                                    $stmt_staff = $db->prepare("INSERT INTO staff (login) VALUES (?)");
+                                    $stmt_staff->bind_param("s", $login);
+                                    $stmt_staff->execute();
+                                    $idstaff = $stmt_staff->insert_id; // Получаем ID нового сотрудника
+                                    $stmt_staff->close();
+
+                                    // Вставка в staff_garage
+                                    $stmt_garage = $db->prepare("INSERT INTO staff_garage (idstaff, idgarage) VALUES (?, ?)");
+                                    $stmt_garage->bind_param("ii", $idstaff);
+                                    $stmt_garage->execute();
+                                    $stmt_garage->close();
+                                    break;
 
                                 case 0:
                                     // Вставка в таблицу customers
@@ -239,33 +277,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
                                     // Получаем id нового customer
                                     $customerId = $stmt_customers->insert_id; // Получаем ID нового customer
                                     $stmt_customers->close();
-    
+        
                                     // Вставка в таблицу cart для нового customer
-                                    $stmt_cart = $db->prepare("INSERT INTO cart (idcustomer) VALUES ( ?)");
+                                    $stmt_cart = $db->prepare("INSERT INTO cart (idcustomer) VALUES (?);");
                                     $stmt_cart->bind_param("i", $customerId);
                                     $stmt_cart->execute();
                                     $stmt_cart->close();
                                     break;
+                            }
+
+                            $message = "Пользователь добавлен успешно.";
+                            $messageType = "success"; // Успешное сообщение
+                            $users = $usersTable->fetch(); // Обновляем данные
                         }
-
-                        $message = "Пользователь добавлен успешно.";
-                        $messageType = "success"; // Успешное сообщение
-                        $users = $usersTable->fetch(); // Обновляем данные
+                    } catch (mysqli_sql_exception $e) {
+                        $message = "Ошибка добавления пользователя: " . $e->getMessage();
+                        $messageType = "error"; // Ошибка
                     }
-                } catch (mysqli_sql_exception $e) {
-                    $message = "Ошибка добавления пользователя: " . $e->getMessage();
-                    $messageType = "error"; // Ошибка
-                }
 
-                $stmt->close();
+                    $stmt->close();
+                }
             }
-        }
     } else {
         $message = "Пожалуйста, заполните все поля.";
         $messageType = "error"; // Ошибка
     }
 }
-
 // Изменение пароля пользователя
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset($_GET['action']) && $_GET['action'] === 'change_password') {
     $change_login = isset($_POST['change_login']) ? trim($_POST['change_login']) : '';
@@ -306,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
 if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
- //удаление пользователя
+ //удаление пользователей
  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
@@ -332,13 +369,41 @@ if (!empty($message)) {
 
             // Удаляем из соответствующей таблицы
             if ($type_role == 0) {
-                // Удаляем из таблицы customers
+                // Удаляем из таблицы cart и customers
+                $stmt = $db->prepare("SELECT id FROM customers WHERE login = ?");
+                $stmt->bind_param("s", $login_delete_user);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $row = $result->fetch_assoc();
+                $id_delete_user= $row["id"];
+                $stmt_cart = $db->prepare("DELETE FROM cart WHERE idcustomer = ?");
+                $stmt_cart->bind_param("i", $id_delete_user);
+                $stmt_cart->execute();
+                $stmt_cart->close();
                 $stmt_customers = $db->prepare("DELETE FROM customers WHERE login = ?");
                 $stmt_customers->bind_param("s", $login_delete_user);
                 $stmt_customers->execute();
                 $stmt_customers->close();
             } elseif ($type_role == 1 || $type_role == 2) {
                 // Удаляем из таблицы staff
+                $stmt = $db->prepare("SELECT id FROM staff WHERE login = ?");
+                $stmt->bind_param("s", $login_delete_user);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $row = $result->fetch_assoc();
+                $id_delete_user= $row["id"];
+                $stmt_staff = $db->prepare("DELETE FROM staff_garage WHERE idstaff = ?");
+                $stmt_staff->bind_param("i", $id_delete_user);
+                $stmt_staff->execute();
+                $stmt_staff->close();
+                $stmt_staff = $db->prepare("DELETE FROM history_operations_with_autoparts WHERE idstaff = ?");
+                $stmt_staff->bind_param("i", $id_delete_user);
+                $stmt_staff->execute();
+                $stmt_staff->close();
+                $stmt_staff = $db->prepare("DELETE FROM history_operations_with_car WHERE idstaff = ?");
+                $stmt_staff->bind_param("i", $id_delete_user);
+                $stmt_staff->execute();
+                $stmt_staff->close();
                 $stmt_staff = $db->prepare("DELETE FROM staff WHERE login = ?");
                 $stmt_staff->bind_param("s", $login_delete_user);
                 $stmt_staff->execute();
@@ -359,6 +424,8 @@ if (!empty($message)) {
 
     $stmt->close();
 }
+
+
 
 ?>
 

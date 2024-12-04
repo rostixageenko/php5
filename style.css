@@ -18,7 +18,7 @@ body {
 main {
   width: auto; /* Автоматическая ширина, чтобы блок расширялся */
   max-width: 100%; /* Максимальная ширина 100% от родительского элемента */
-  margin: 20px auto; /*Центрируем блок */
+  /* margin: 20px auto; Центрируем блок */
   padding: 20px; /* Добавляем внутренние отступы */
   background: white; /* Белый фон */
   /* border-radius: 10px; Скругляем углы */
@@ -58,7 +58,6 @@ th {
   text-align: center; /* Центрируем содержимое */
   padding: 10px; /* Внутренние отступы */
 }
-
 /* Стили для заголовка */
 .header {
   width: 30%;
@@ -101,6 +100,7 @@ form, .content {
   display: block;
   text-align: left;
   margin: 3px;
+  color: gray; /* Устанавливаем цвет метки на серый */
 }
 
 .input-group input {
