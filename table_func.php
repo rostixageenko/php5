@@ -230,13 +230,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isse
                                 $stmt_staff->close();
                                 break;
 
-                            case 0:
-                                // Вставка в таблицу customers
-                                $stmt_customers = $db->prepare("INSERT INTO customers (login) VALUES (?)");
-                                $stmt_customers->bind_param("s", $login);
-                                $stmt_customers->execute();
-                                $stmt_customers->close();
-                                break;
+                                case 0:
+                                    // Вставка в таблицу customers
+                                    $stmt_customers = $db->prepare("INSERT INTO customers (login) VALUES (?)");
+                                    $stmt_customers->bind_param("s", $login);
+                                    $stmt_customers->execute();
+                                    
+                                    // Получаем id нового customer
+                                    $customerId = $stmt_customers->insert_id; // Получаем ID нового customer
+                                    $stmt_customers->close();
+    
+                                    // Вставка в таблицу cart для нового customer
+                                    $stmt_cart = $db->prepare("INSERT INTO cart (idcustomer) VALUES ( ?)");
+                                    $stmt_cart->bind_param("i", $customerId);
+                                    $stmt_cart->execute();
+                                    $stmt_cart->close();
+                                    break;
                         }
 
                         $message = "Пользователь добавлен успешно.";

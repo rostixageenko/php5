@@ -1,5 +1,5 @@
 <?php
-include ("db_executer.php");
+include_once("db_executer.php");
 session_start();
 
 $login = "";

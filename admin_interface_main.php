@@ -1,5 +1,5 @@
 <?php
-include('table_func.php');// Подключаем файл с функциями и классами
+include('table_func.php'); // Подключаем файл с функциями и классами
 ?>
 
 <!DOCTYPE html>
@@ -42,6 +42,33 @@ include('table_func.php');// Подключаем файл с функциями
         .input-group {
             margin-bottom: 15px; /* Отступ между полями */
         }
+        /* Стили для выпадающего списка */
+        select {
+            height: 43px; /* Высота выпадающего списка */
+            width: 100%; /* Ширина 95% */
+            padding: 5px 10px; /* Внутренние отступы */
+            font-size: 16px; /* Размер шрифта */
+            border-radius: 5px; /* Скругленные углы */
+            border: 1px solid gray; /* Серый цвет рамки */
+            background-color: white; /* Белый фон */
+            color: gray; /* Цвет текста по умолчанию */
+            cursor: pointer; /* Указатель при наведении */
+            appearance: none; /* Убираем стандартный стиль браузера */
+        }
+        /* Серый цвет для первого элемента */
+        select option[value=""] {
+            color: gray; /* Серый цвет текста для первого элемента */
+        }
+        /* Стили для опций внутри выпадающего списка */
+        select option {
+            padding: 10px; /* Внутренние отступы для опций */
+            background-color: white; /* Фон опций */
+            color: black; /* Цвет текста */
+        }
+        /* Эффект при наведении на опции (для некоторых браузеров) */
+        select:hover {
+            border-color: #888; /* Цвет рамки при наведении */
+        }
     </style>
 </head>
 <body>
@@ -61,12 +88,12 @@ include('table_func.php');// Подключаем файл с функциями
                 <a href="?table=cars">Автомобили</a>
             </div>
         </div>
-        <button class="button">Аналитика</button>
         <a href="activity_log.php" class="button">История операций</a>
+        <a href="personal_cabinet.php" class="button">Личный кабинет</a> <!-- Кнопка личного кабинета -->
+        <a href="sql_queries.php" class="button">SQL Запросы</a> <!-- Новая кнопка -->
     </div>
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
-
 <main>
     <div class="container">
         <div class="form-container">
@@ -79,7 +106,12 @@ include('table_func.php');// Подключаем файл с функциями
                     <input type="password" name="password" placeholder="Пароль" required>
                 </div>
                 <div class="input-group">
-                    <input type="text" name="type_role" placeholder="Тип роли" required>
+                    <select name="type_role" required>
+                        <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
+                        <option value="0">Покупатель</option>
+                        <option value="1">Администратор</option>
+                        <option value="2">Сотрудник</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn">Добавить</button>
             </form>
@@ -112,7 +144,12 @@ include('table_func.php');// Подключаем файл с функциями
                     <input type="text" name="login" placeholder="Логин">
                 </div>
                 <div class="input-group">
-                    <input type="text" name="type_role" placeholder="Тип роли (0, 1 или 2)">
+                    <select name="type_role">
+                        <option value="" disabled selected style="color: gray;">Выберите тип роли (необязательно)</option>
+                        <option value="0">Покупатель</option>
+                        <option value="1">Администратор</option>
+                        <option value="2">Сотрудник</option>
+                    </select>
                 </div>
                 <button type="submit" name="search_users" class="btn">Поиск</button>
             </form>
@@ -127,7 +164,8 @@ include('table_func.php');// Подключаем файл с функциями
                 switch ($selectedTable) {
                     case 'users':
                         if (!isset($_POST['search_users'])) {
-                         $users = $usersTable->fetchLimited($rowCount);}
+                            $users = $usersTable->fetchLimited($rowCount);
+                        }
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':

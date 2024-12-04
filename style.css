@@ -298,3 +298,31 @@ a {
 a:hover {
   text-decoration: none; /* Убирает подчеркивание при наведении */
 }
+
+/* Стили для выпадающего списка */
+select {
+  height: 36px; /* Высота выпадающего списка */
+  width: 95%; /* Ширина 95% */
+  padding: 5px 10px; /* Внутренние отступы */
+  font-size: 16px; /* Размер шрифта */
+  border-radius: 5px; /* Скругленные углы */
+  border: 1px solid rgb(128, 128, 128); /* Серый цвет рамки */
+  background-color: white; /* Белый фон */
+  cursor: pointer; /* Указатель при наведении */
+  appearance: none; /* Убираем стандартный стиль браузера */
+  background-image: url('data:image/png;base64,...'); /* Замените на изображение стрелки */
+  background-repeat: no-repeat; /* Не повторять изображение */
+  background-position: right 10px center; /* Позиция стрелки */
+}
+
+/* Стили для опций внутри выпадающего списка */
+select option {
+  padding: 10px; /* Внутренние отступы для опций */
+  background-color: white; /* Фон опций */
+  color: black; /* Цвет текста */
+}
+
+/* Эффект при наведении на опции (для некоторых браузеров) */
+select:hover {
+  border-color: #888; /* Цвет рамки при наведении */
+}
