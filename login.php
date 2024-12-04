@@ -24,11 +24,11 @@
     <form method="post" action="login.php" class="login_register-form"> <!-- Изменено на login_register-form -->
         <?php include('errors.php'); ?>
         <div class="input-group">
-            <label>Логин</label>
+            <label_1>Логин</label_1>
             <input type="text" name="login" required>
         </div>
         <div class="input-group">
-            <label>Пароль</label>
+            <label_1>Пароль</label_1>
             <input type="password" name="password" required>
         </div>
         <div class="input-group">

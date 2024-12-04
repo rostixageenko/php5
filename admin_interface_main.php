@@ -148,7 +148,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <div class="input-group garage-input">
                         <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
                     </div>
-                    <button type="submit" class="btn">Добавить</button>
+                    <button type="submit"  name="add_users" class="btn">Добавить</button>
                 </form>
 
                 <h2>Поиск пользователей</h2>

@@ -24,17 +24,17 @@
     <form method="post" action="register.php"  class="login_register-form"> <!-- Теперь класс login_register-form -->
         <?php include('errors.php'); ?>
         <div class="input-group">
-            <label>Логин</label>
+            <label_1>Логин</label_1>
             <input type="text" name="login" required>
         </div>
 
         <div class="input-group">
-            <label>Пароль</label>
+            <label_1>Пароль</label_1>
             <input type="password" name="password_1" required>
         </div>
 
         <div class="input-group">
-            <label>Введите пароль ещё раз</label>
+            <label_1>Введите пароль ещё раз</label_1>
             <input type="password" name="password_2" required>
         </div>
 

@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
 }
 
 // Добавление нового пользователя
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && !isset($_POST['search_users'])) 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' &&isset($_POST['add_users'])) 
 {
     $login = isset($_POST['login']) ? trim($_POST['login']) : '';
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
