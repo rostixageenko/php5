@@ -50,16 +50,17 @@ class TableFunction {
         if (count($data) > 0) {
             echo "<table>";
             echo "<tr>";
-            
+    
             // Выводим заголовки столбцов
             foreach (array_keys($data[0]) as $key) {
                 echo "<th>" . htmlspecialchars($key) . "</th>";
             }
             echo "<th>Действия</th>"; // Заголовок для действий
             echo "</tr>";
-            
+    
             foreach ($data as $row) {
-                echo "<tr>";
+                // Добавляем data-id к строке для идентификации
+                echo "<tr data-id='" . htmlspecialchars($row['id']) . "'>";
                 foreach ($row as $key => $cell) {
                     // Проверяем, является ли ячейка строкой и содержит ли корректный JSON
                     if (is_string($cell) && $this->is_json($cell)) {
@@ -262,8 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' &&isset(
                                     $stmt_staff->close();
 
                                     // Вставка в staff_garage
-                                    $stmt_garage = $db->prepare("INSERT INTO staff_garage (idstaff, idgarage) VALUES (?, ?)");
-                                    $stmt_garage->bind_param("ii", $idstaff);
+                                    $stmt_garage = $db->prepare("INSERT INTO staff_garage (idstaff, idgarage) VALUES (?,? )");
+                                    $stmt_garage->bind_param("ii", $idstaff,   $garage_id);
                                     $stmt_garage->execute();
                                     $stmt_garage->close();
                                     break;
@@ -343,8 +344,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
 if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
- //удаление пользователей
- if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
+    $response = ['success' => false, 'message' => ''];
+
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
     // Получаем login и type_role пользователя
@@ -362,7 +364,7 @@ if (!empty($message)) {
         if ($usersTable->deleteUser($id) === 1) {
             $login = $_SESSION['login'];
             $id_user = $_SESSION['user_id'];
-            
+
             // Логируем действие
             $Actstr = "Пользователь $login типа '0' удалил пользователя $login_delete_user.";
             $dbExecutor->insertAction($id_user, $Actstr);
@@ -375,7 +377,7 @@ if (!empty($message)) {
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $row = $result->fetch_assoc();
-                $id_delete_user= $row["id"];
+                $id_delete_user = $row["id"];
                 $stmt_cart = $db->prepare("DELETE FROM cart WHERE idcustomer = ?");
                 $stmt_cart->bind_param("i", $id_delete_user);
                 $stmt_cart->execute();
@@ -391,7 +393,7 @@ if (!empty($message)) {
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $row = $result->fetch_assoc();
-                $id_delete_user= $row["id"];
+                $id_delete_user = $row["id"];
                 $stmt_staff = $db->prepare("DELETE FROM staff_garage WHERE idstaff = ?");
                 $stmt_staff->bind_param("i", $id_delete_user);
                 $stmt_staff->execute();
@@ -410,19 +412,18 @@ if (!empty($message)) {
                 $stmt_staff->close();
             }
 
-            $message = "Пользователь успешно удален."; // Успешное сообщение
-            $messageType = "success"; // Успешное сообщение
-            $users = $usersTable->fetch(); // Обновляем данные
+            $response['success'] = true;
+            $response['message'] = "Пользователь успешно удален.";
         } else {
-            $message = "Ошибка: пользователь не найден или не удалось удалить.";
-            $messageType = "error"; // Ошибка
+            $response['message'] = "Ошибка: пользователь не найден или не удалось удалить.";
         }
     } else {
-        $message = "Ошибка: пользователь не найден.";
-        $messageType = "error"; // Ошибка
+        $response['message'] = "Ошибка: пользователь не найден.";
     }
 
     $stmt->close();
+    echo json_encode($response);
+    exit;
 }
 
 

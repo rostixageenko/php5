@@ -52,6 +52,24 @@ include('table_func.php'); // Подключаем файл с функциям�
             border-radius: 5px; /* Скругленные углы */
             border: 1px solid gray; /* Серый цвет рамки */
         }
+        .custom-select {
+            width: 100%;             /* Ширина 93% от родительского элемента */
+            height: 40px;          /* Высота поля выбора */
+            border: 1px solid gray; /* Серый цвет рамки */
+            color: gray;            /* Серый цвет шрифта */
+            background-color: white; /* Белый фон */
+            padding: 10px;         /* Отступы внутри select */
+            border-radius: 4px;    /* Закругленные углы */
+            font-size: 16px;       /* Размер шрифта */
+            appearance: none;      /* Убираем стандартный стиль браузера */
+            cursor: pointer;       /* Указатель при наведении */
+        }
+
+        /* Изменения при фокусе */
+        .custom-select:focus {
+            outline: none;         /* Убираем стандартный фокус */
+            border-color: darkgray; /* Темно-серая рамка при фокусе */
+        }
         /* Стили для кнопок */
         .btn {
             padding: 10px;
@@ -138,7 +156,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput()">
+                        <select name="type_role" required onchange="toggleGarageInput()" class="custom-select">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -160,7 +178,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="text" name="login" placeholder="Логин">
                     </div>
                     <div class="input-group">
-                        <select name="type_role">
+                        <select name="type_role"  class="custom-select">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли (необязательно)</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -346,5 +364,34 @@ include('table_func.php'); // Подключаем файл с функциям�
 
 <!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.delete-btn').click(function(event) {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+        var userId = $(this).siblings('input[name="id"]').val(); // Получаем ID пользователя
+
+        if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+            $.ajax({
+                url: '?table=users&action=delete', // URL вашего обработчика
+                type: 'POST',
+                data: { id: userId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        $('tr[data-id="' + userId + '"]').remove(); // Удаляем строку из таблицы
+                        alert(response.message);
+                    } else {
+                        alert(response.message); // Показываем сообщение об ошибке
+                    }
+                },
+                error: function() {
+                    alert('Произошла ошибка при удалении пользователя.');
+                }
+            });
+        }
+    });
+});
+</script>
 </body>
 </html>
