@@ -1,9 +1,9 @@
 Array
 (
-    [name] => Без названия.jpeg
-    [full_path] => Без названия.jpeg
+    [name] => e0fed932.jpg
+    [full_path] => e0fed932.jpg
     [type] => image/jpeg
-    [tmp_name] => C:\xampp\tmp\php3E3C.tmp
+    [tmp_name] => C:\xampp\tmp\php1C9A.tmp
     [error] => 0
-    [size] => 8023
+    [size] => 60833
 )

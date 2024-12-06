@@ -720,69 +720,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
                 $messageType = 'error';
             }
         }
+    
+    }
+}
 
 
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) 
-        {
-            $file = $_FILES['photo'];
+//изображение изменение
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['table'] === 'auto_parts' && isset($_POST['update_image'])) {
+    $hasError = false; // Флаг для отслеживания ошибок
 
-            $fileData = null;
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['photo'];
+    // Проверка на заполнение обязательных полей
+    if (empty($_POST['image_part_id'])) {
+        $message = "Пожалуйста, укажите ID запчасти.";
+        $messageType = "error"; // Ошибка
+        $hasError = true; // Устанавливаем флаг ошибки
+    } else {
+        $partId = $_POST['image_part_id'];
 
-            // Логирование информации о файле
-            file_put_contents('debug.txt', print_r($file, true));
+        // Проверка существования запчасти по ID
+        $stmt = $db->prepare("SELECT COUNT(*) FROM auto_parts WHERE id = ?");
+        $stmt->bind_param("i", $partId);
+        $stmt->execute();
+        $stmt->bind_result($partExists);
+        $stmt->fetch();
+        $stmt->close();
 
-            // Проверка размера файла
-            if ($file['size'] > 10 * 1024 * 1024) {
-                $message = "Размер файла не должен превышать 10 МБ.";
+        if ($partExists === 0) {
+            $message = "Ошибка: Указанный ID запчасти не существует.";
+            $messageType = "error"; // Ошибка
+            $hasError = true; // Устанавливаем флаг ошибки
+        }
+    }
+
+    // Проверка загрузки файла (необязательное поле)
+    $fileData = null;
+    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['photo'];
+
+        // Логирование информации о файле
+        file_put_contents('debug.txt', print_r($file, true));
+
+        // Проверка размера файла
+        if ($file['size'] > 10 * 1024 * 1024) {
+            $message = "Размер файла не должен превышать 10 МБ.";
+            $messageType = "error";
+            $hasError = true; // Устанавливаем флаг ошибки
+        }
+
+        // Проверка типа файла
+        if (!$hasError) {
+            $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif'];
+            $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                $message = "Допустимые типы файлов: .jpeg, .jpg, .png, .gif.";
                 $messageType = "error";
                 $hasError = true; // Устанавливаем флаг ошибки
             }
+        }
 
-            // Проверка типа файла
-            if (!$hasError) {
-                $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    $message = "Допустимые типы файлов: .jpeg, .jpg, .png, .gif.";
-                    $messageType = "error";
-                    $hasError = true; // Устанавливаем флаг ошибки
-                }
-            }
-
-            // Проверка корректности изображения
-            if (!$hasError) {
-                if (!getimagesize($file['tmp_name'])) {
-                    $message = "Изображение повреждено. Замените его на не поврежденный вариант.";
-                    $messageType = "error";
-                    $hasError = true; // Устанавливаем флаг ошибки
-                }
-            }
-
-            // Чтение содержимого файла
-            if (!$hasError) {
-                $fileData = file_get_contents($file['tmp_name']);
+        // Проверка корректности изображения
+        if (!$hasError) {
+            if (!getimagesize($file['tmp_name'])) {
+                $message = "Изображение повреждено. Замените его на не поврежденный вариант.";
+                $messageType = "error";
+                $hasError = true; // Устанавливаем флаг ошибки
             }
         }
 
-        // Если ошибок нет, выполняем SQL-запрос для вставки данных
-        if (!$hasError) 
-        {
-            $stmt = $db->prepare("UPDATE auto_parts SET photo = ? WHERE id = ?");
-
-            if ($stmt->execute()) {
-                $message = "Запчасть успешно изменена.";
-                $messageType = "success"; // Успех
-            } else {
-                $message = "Ошибка: " . $stmt->error;
-                $messageType = "error"; // Ошибка
-            }
-
-            $stmt->close();
+        // Чтение содержимого файла
+        if (!$hasError) {
+            $fileData = file_get_contents($file['tmp_name']);
         }
     }
-}
+
+    // Если ошибок нет, выполняем SQL-запрос для обновления изображения
+    if (!$hasError) {
+        $stmt = $db->prepare("UPDATE auto_parts SET photo = ? WHERE id = ?");
+        $stmt->bind_param("si", $fileData, $partId);
+
+        if ($stmt->execute()) {
+            $message = "Изображение успешно обновлено.";
+            $messageType = "success"; // Успех
+        } else {
+            $message = "Ошибка: " . $stmt->error;
+            $messageType = "error"; // Ошибка
+        }
+
+        $stmt->close();
+    }
 }
 
+//поиск автозапчастей
+$searchConditions = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
+    $partId = isset($_POST['search_part_id']) ? trim($_POST['search_part_id']) : '';
+    $article = isset($_POST['search_article']) ? trim($_POST['search_article']) : '';
+    $partName = isset($_POST['search_part_name']) ? trim($_POST['search_part_name']) : '';
+    $carId = isset($_POST['search_car_id']) ? trim($_POST['search_car_id']) : '';
+    $garageId = isset($_POST['search_garage_id']) ? trim($_POST['search_garage_id']) : '';
+
+    // Добавляем условия поиска только для заполненных полей
+    if (!empty($partId)) {
+        $searchConditions[] = "id = " . intval($partId);
+    }
+    if (!empty($article)) {
+        $searchConditions[] = "article LIKE '%" . mysqli_real_escape_string($db, $article) . "%'";
+    }
+    if (!empty($partName)) {
+        $searchConditions[] = "name_parts LIKE '%" . mysqli_real_escape_string($db, $partName) . "%'";
+    }
+    if (!empty($carId)) {
+        $searchConditions[] = "idcar = " . intval($carId);
+    }
+    if (!empty($garageId)) {
+        $searchConditions[] = "idgarage = " . intval($garageId);
+    }
+
+    // Выполняем поиск запчастей с учетом условий
+    $parts = $partsTable->fetch($searchConditions);
+
+    // Проверка, есть ли результаты
+    if (empty($parts)) {
+        $message = "Запчасти не найдены.";
+        $messageType = "error"; // Ошибка
+    } else {
+        $message = ""; // Очистка сообщения, если нашли запчасти
+    }
+} else {
+    // Если это не поиск, просто загружаем все запчасти
+    $parts = $partsTable->fetch();
+}
 ?>

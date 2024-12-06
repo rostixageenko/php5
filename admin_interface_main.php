@@ -18,10 +18,10 @@ include('table_func.php'); // Подключаем файл с функциям�
             width: 300px; /* Ширина контейнера формы */
         }
         .tables-container {
-         width: 1100px; /* Установите фиксированную ширину */
-        max-width: 100%; /* Максимальная ширина 100% для адаптивности */
-        overflow-x: auto; /* Добавляет горизонтальную прокрутку при переполнении */
-        flex-shrink: 0; /* Не позволяет элементу сжиматься */
+            width: 1100px; /* Установите фиксированную ширину */
+            max-width: 100%; /* Максимальная ширина 100% для адаптивности */
+            overflow-x: auto; /* Добавляет горизонтальную прокрутку при переполнении */
+            flex-shrink: 0; /* Не позволяет элементу сжиматься */
         }
         .success, .error {
             color: white; /* Белый цвет текста */
@@ -45,8 +45,6 @@ include('table_func.php'); // Подключаем файл с функциям�
         .input-group {
             margin-bottom: 15px; /* Отступ между полями */
         }
-       
-        
         /* Стили для кнопок */
         .btn {
             padding: 10px;
@@ -60,18 +58,17 @@ include('table_func.php'); // Подключаем файл с функциям�
         }
         /* Стили для поля загрузки изображения */
         .upload-photo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%; /* Ширина 100% */
-        height: 100px; /* Высота области загрузки */
-        border: 2px solid gray; /* Обычная рамка */
-        border-radius: 5px; /* Скругленные углы */
-        cursor: pointer; /* Указатель при наведении */
-        position: relative; /* Для абсолютного позиционирования изображения */
-        overflow: hidden; /* Убедитесь, что изображение не выходит за границы */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%; /* Ширина 100% */
+            height: 100px; /* Высота области загрузки */
+            border: 2px solid gray; /* Обычная рамка */
+            border-radius: 5px; /* Скругленные углы */
+            cursor: pointer; /* Указатель при наведении */
+            position: relative; /* Для абсолютного позиционирования изображения */
+            overflow: hidden; /* Убедитесь, что изображение не выходит за границы */
         }
-
         .upload-photo img {
             max-width: 100%;
             max-height: 100%;
@@ -139,7 +136,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput(); changeColor(this);" class="custom-select" >
+                        <select name="type_role" required onchange="toggleGarageInput();" class="custom-select">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -149,9 +146,10 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <div class="input-group garage-input">
                         <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
                     </div>
-                    <button type="submit"  name="add_users" class="btn">Добавить</button>
+                    <button type="submit" name="add_users" class="btn">Добавить</button>
                 </form>
 
+                <!-- Поиск пользователей -->
                 <h2>Поиск пользователей</h2>
                 <form method="POST" action="?table=users">
                     <div class="input-group">
@@ -161,7 +159,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="text" name="login" placeholder="Логин">
                     </div>
                     <div class="input-group">
-                        <select name="type_role"  class="custom-select" id="mySelect" onchange="changeColor(this)">
+                        <select name="type_role" class="custom-select" id="mySelect" onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли (необязательно)</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -171,6 +169,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <button type="submit" name="search_users" class="btn">Поиск</button>
                 </form>
 
+                <!-- Изменить пароль пользователя -->
                 <h2>Изменить пароль пользователя</h2>
                 <form method="POST" action="?table=users&action=change_password">
                     <div class="input-group">
@@ -182,8 +181,8 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <button type="submit" class="btn">Изменить</button>
                 </form>
 
-                <?php elseif ($selectedTable === 'auto_parts'): ?>
-                    <h2>Добавить запчасть</h2>
+            <?php elseif ($selectedTable === 'auto_parts'): ?>
+                <h2>Добавить запчасть</h2>
                 <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
                     <div class="input-group">
                         <input type="text" name="part_name" placeholder="Название запчасти" required>
@@ -250,15 +249,23 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <div class="input-group">
                         <input type="text" name="new_garage_id" placeholder="ID гаража (необязательно)">
                     </div>
+                    <button type="submit" class="btn" name="update_part">Изменить запчасть</button>
+                </form>
+
+                <h2>Изменение картинки</h2>
+                <form method="POST" action="?table=auto_parts&action=update_image" enctype="multipart/form-data">
                     <div class="input-group">
-                        <label>Добавить новое изображение (необязательно)</label>
-                        <div class="upload-photo" onclick="document.getElementById('file-input-update').click();">
+                        <input type="text" name="image_part_id" placeholder="ID запчасти" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Загрузить новое изображение</label>
+                        <div class="upload-photo" onclick="document.getElementById('file-input-image').click();">
                             <span class="upload-icon">+</span>
-                            <input type="file" id="file-input-update" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                            <img src="" alt="Предварительный просмотр нового изображения" style="display: none;" />
+                            <input type="file" id="file-input-image" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
                         </div>
                     </div>
-                    <button type="submit" class="btn" name="update_part">Изменить запчасть</button>
+                    <button type="submit" class="btn" name="update_image">Изменить картинку</button>
                 </form>
 
                 <h2>Поиск запчастей</h2>
@@ -278,18 +285,18 @@ include('table_func.php'); // Подключаем файл с функциям�
                     <div class="input-group">
                         <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
                     </div>
-                    <button type="submit" class="btn">Поиск запчастей</button>
+                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
                 </form>
             <?php else: ?>
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
             <?php endif; ?>
             <h2>Вывод данных</h2>
-                <form method="POST" action="?table=<?php echo $selectedTable; ?>">
-                    <div class="input-group">
-                        <input type="number" name="row_count" placeholder="Количество строк" required min="1">
-                    </div>
-                    <button type="submit" class="btn">Вывести</button>
-                </form>
+            <form method="POST" action="?table=<?php echo $selectedTable; ?>">
+                <div class="input-group">
+                    <input type="number" name="row_count" placeholder="Количество строк" required min="1">
+                </div>
+                <button type="submit" class="btn">Вывести</button>
+            </form>
         </div>
 
         <div class="tables-container">
@@ -306,7 +313,9 @@ include('table_func.php'); // Подключаем файл с функциям�
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':
-                        $parts = $partsTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_part'])) {
+                            $parts = $partsTable->fetchLimited($rowCount);
+                        }
                         $partsTable->renderTable($parts, 'Запчасти');
                         break;
                     case 'orders':
