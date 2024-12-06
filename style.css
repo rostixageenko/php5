@@ -91,11 +91,39 @@ form, .content {
   background: #d3d3d3; /* Светло-серый фон */
   border-radius: 0px 0px 10px 10px;
 }
-
+input, select, textarea {
+  width: 93%; /* Ширина 100% */
+  padding: 5px 10px;
+  font-family: Arial, sans-serif; /* Внутренние отступы */
+  font-size: 16px; /* Размер шрифта */
+  border-radius: 5px; /* Скругленные углы */
+  border: 1px solid gray; /* Серый цвет рамки */
+}
 .input-group {
   margin: 10px 0px 10px 0px;
 }
+.custom-select {
+  width: 100%;             /* Ширина 100% от родительского элемента */
+  height: 40px;           /* Высота поля выбора */
+  border: 1px solid gray;  /* Серый цвет рамки */
+  color: gray;             /* Серый цвет шрифта по умолчанию */
+  background-color: white; /* Белый фон */
+  padding: 10px;          /* Отступы внутри select */
+  border-radius: 4px;     /* Закругленные углы */
+  font-size: 16px;        /* Размер шрифта */
+  appearance: none;       /* Убираем стандартный стиль браузера */
+  cursor: pointer;        /* Указатель при наведении */
+}
 
+.custom-select option {
+  color: black;           /* Цвет текста для выбранного элемента */
+}
+
+/* Изменения при фокусе */
+.custom-select:focus {
+  outline: none;         /* Убираем стандартный фокус */
+  border-color: darkgray; /* Темно-серая рамка при фокусе */
+}
 .input-group label {
   display: block;
   text-align: left;

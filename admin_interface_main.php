@@ -45,31 +45,8 @@ include('table_func.php'); // Подключаем файл с функциям�
         .input-group {
             margin-bottom: 15px; /* Отступ между полями */
         }
-        input, select, textarea {
-            width: 93%; /* Ширина 100% */
-            padding: 5px 10px; /* Внутренние отступы */
-            font-size: 16px; /* Размер шрифта */
-            border-radius: 5px; /* Скругленные углы */
-            border: 1px solid gray; /* Серый цвет рамки */
-        }
-        .custom-select {
-            width: 100%;             /* Ширина 93% от родительского элемента */
-            height: 40px;          /* Высота поля выбора */
-            border: 1px solid gray; /* Серый цвет рамки */
-            color: gray;            /* Серый цвет шрифта */
-            background-color: white; /* Белый фон */
-            padding: 10px;         /* Отступы внутри select */
-            border-radius: 4px;    /* Закругленные углы */
-            font-size: 16px;       /* Размер шрифта */
-            appearance: none;      /* Убираем стандартный стиль браузера */
-            cursor: pointer;       /* Указатель при наведении */
-        }
-
-        /* Изменения при фокусе */
-        .custom-select:focus {
-            outline: none;         /* Убираем стандартный фокус */
-            border-color: darkgray; /* Темно-серая рамка при фокусе */
-        }
+       
+        
         /* Стили для кнопок */
         .btn {
             padding: 10px;
@@ -83,26 +60,32 @@ include('table_func.php'); // Подключаем файл с функциям�
         }
         /* Стили для поля загрузки изображения */
         .upload-photo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%; /* Ширина 100% */
-            height: 100px; /* Высота области загрузки */
-            border: 2px dashed gray; /* Дашированная рамка */
-            border-radius: 5px; /* Скругленные углы */
-            cursor: pointer; /* Указатель при наведении */
-            position: relative; /* Для абсолютного позиционирования кнопки */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%; /* Ширина 100% */
+        height: 100px; /* Высота области загрузки */
+        border: 2px solid gray; /* Обычная рамка */
+        border-radius: 5px; /* Скругленные углы */
+        cursor: pointer; /* Указатель при наведении */
+        position: relative; /* Для абсолютного позиционирования изображения */
+        overflow: hidden; /* Убедитесь, что изображение не выходит за границы */
         }
-        .upload-photo input[type="file"] {
-            position: absolute; /* Позиционирование файла */
-            opacity: 0; /* Скрываем стандартный элемент */
-            width: 100%; /* Ширина 100% */
-            height: 100%; /* Высота 100% */
-            cursor: pointer; /* Указатель при наведении */
+
+        .upload-photo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Сохраняет соотношение сторон */
+            display: none; /* Скрываем изображение по умолчанию */
+        }
+        .upload-photo:hover {
+            border-color: #3c763d; /* Изменение цвета рамки при наведении */
+            background-color: rgba(76, 175, 80, 0.1); /* Легкий фон при наведении */
         }
         .upload-icon {
             font-size: 30px; /* Размер значка */
             color: gray; /* Цвет значка */
+            position: absolute; /* Позволяет центровать иконку внутри рамки */
         }
         .garage-input {
             display: none; /* Скрываем поле по умолчанию */
@@ -156,7 +139,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput()" class="custom-select">
+                        <select name="type_role" required onchange="toggleGarageInput(); changeColor(this);" class="custom-select" >
                             <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -178,7 +161,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="text" name="login" placeholder="Логин">
                     </div>
                     <div class="input-group">
-                        <select name="type_role"  class="custom-select">
+                        <select name="type_role"  class="custom-select" id="mySelect" onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли (необязательно)</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
@@ -200,45 +183,46 @@ include('table_func.php'); // Подключаем файл с функциям�
                 </form>
 
                 <?php elseif ($selectedTable === 'auto_parts'): ?>
-<h2>Добавить запчасть</h2>
-<form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
-    <div class="input-group">
-        <input type="text" name="part_name" placeholder="Название запчасти" required>
-    </div>
-    <div class="input-group">
-        <input type="text" name="article" placeholder="Артикул" required>
-    </div>
-    <div class="input-group">
-        <input type="text" name="condition" placeholder="Состояние" required>
-    </div>
-    <div class="input-group">
-        <input type="number" name="price" placeholder="Цена" required>
-    </div>
-    <div class="input-group">
-        <textarea name="description" placeholder="Описание" required></textarea>
-    </div>
-    <div class="input-group">
-        <input type="text" name="car_id" placeholder="ID автомобиля" required>
-    </div>
-    <div class="input-group">
-        <input type="text" name="garage_id" placeholder="ID гаража" required>
-    </div>
-    <div class="input-group">
-        <label>Добавить изображение</label>
-        <div class="upload-photo">
-            <span class="upload-icon">+</span>
-            <input type="file" name="photo" accept="image/*" required>
-        </div>
-    </div>
-    <button type="submit" class="btn">Добавить запчасть</button>
-</form>
+                    <h2>Добавить запчасть</h2>
+                <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="part_name" placeholder="Название запчасти" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="article" placeholder="Артикул" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="condition" placeholder="Состояние" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="price" placeholder="Цена" required>
+                    </div>
+                    <div class="input-group">
+                        <textarea name="description" placeholder="Описание" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="car_id" placeholder="ID автомобиля" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="garage_id" placeholder="ID гаража" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Добавить изображение</label>
+                        <div class="upload-photo" onclick="document.getElementById('file-input').click();">
+                            <span class="upload-icon">+</span>
+                            <input type="file" id="file-input" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" name="add_part">Добавить запчасть</button>
+                </form>
 
                 <h2>Изменить запчасть</h2>
-                <form method="POST" action="?table=auto_parts&action=update">
+                <form method="POST" action="?table=auto_parts&action=update_part">
                     <div class="input-group">
-                        <select name="search_field" required>
+                        <select name="search_field" required class="custom-select" id="mySelect" onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Выберите поле для поиска</option>
-                            <option value="part_id">ID запчасти</option>
+                            <option value="id">ID запчасти</option>
                             <option value="article">Артикул</option>
                         </select>
                     </div>
@@ -261,19 +245,20 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <textarea name="new_description" placeholder="Новое описание (необязательно)"></textarea>
                     </div>
                     <div class="input-group">
-                        <label>Добавить новое изображение (необязательно)</label>
-                        <div class="upload-photo">
-                            <span class="upload-icon">+</span>
-                            <input type="file" name="new_photo" accept="image/*">
-                        </div>
-                    </div>
-                    <div class="input-group">
                         <input type="text" name="new_car_id" placeholder="ID автомобиля (необязательно)">
                     </div>
                     <div class="input-group">
                         <input type="text" name="new_garage_id" placeholder="ID гаража (необязательно)">
                     </div>
-                    <button type="submit" class="btn">Изменить запчасть</button>
+                    <div class="input-group">
+                        <label>Добавить новое изображение (необязательно)</label>
+                        <div class="upload-photo" onclick="document.getElementById('file-input-update').click();">
+                            <span class="upload-icon">+</span>
+                            <input type="file" id="file-input-update" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр нового изображения" style="display: none;" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" name="update_part">Изменить запчасть</button>
                 </form>
 
                 <h2>Поиск запчастей</h2>
@@ -365,33 +350,6 @@ include('table_func.php'); // Подключаем файл с функциям�
 <!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-$(document).ready(function() {
-    $('.delete-btn').click(function(event) {
-        event.preventDefault(); // Предотвращаем стандартное поведение формы
-        var userId = $(this).siblings('input[name="id"]').val(); // Получаем ID пользователя
 
-        if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
-            $.ajax({
-                url: '?table=users&action=delete', // URL вашего обработчика
-                type: 'POST',
-                data: { id: userId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        $('tr[data-id="' + userId + '"]').remove(); // Удаляем строку из таблицы
-                        alert(response.message);
-                    } else {
-                        alert(response.message); // Показываем сообщение об ошибке
-                    }
-                },
-                error: function() {
-                    alert('Произошла ошибка при удалении пользователя.');
-                }
-            });
-        }
-    });
-});
-</script>
 </body>
 </html>

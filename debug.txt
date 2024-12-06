@@ -1,0 +1,9 @@
+Array
+(
+    [name] => Без названия.jpeg
+    [full_path] => Без названия.jpeg
+    [type] => image/jpeg
+    [tmp_name] => C:\xampp\tmp\php3E3C.tmp
+    [error] => 0
+    [size] => 8023
+)

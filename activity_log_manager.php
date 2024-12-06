@@ -116,12 +116,7 @@ try {
             $query .= " AND sys_activity_log.action LIKE ?";
             $params[] = "%$action%";
         }
-        
-        $query .= "
-            ORDER BY $order_by $order_dir
-            LIMIT 15
-        ";
-        
+                
         // Подготовка и выполнение запроса
         $stmt = $conn->prepare($query);
         if ($params) {
