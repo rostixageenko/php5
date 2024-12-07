@@ -33,8 +33,33 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     // Заголовки таблицы
     $sheet->setCellValue('A1', 'ИД события');
     $sheet->setCellValue('B1', 'Действующее лицо');
-    $sheet->setCellValue('C1', 'Дата и время действия');
-    $sheet->setCellValue('D1', 'Действие');
+    $sheet->setCellValue('D1', 'Дата и время действия');
+    $sheet->setCellValue('G1', 'Действие');
+
+    // Объединяем ячейки
+    $sheet->mergeCells('B1:C1'); // Объединяем ячейки B1 и C1
+    $sheet->mergeCells('D1:F1'); // Объединяем ячейки D1, E1 и F1
+    $sheet->mergeCells('G1:M1'); // Объединяем ячейки G1 и M1
+
+    // Установка границ для заголовков
+    $styleArrayHeader = [
+        'borders' => [
+            'allBorders' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THICK,
+                'color' => ['argb' => 'FF000000'], // Черный цвет
+            ],
+        ],
+        'font' => [
+            'bold' => true, // Жирный шрифт для заголовков
+        ],
+    ];
+
+    // Применение стиля к заголовкам
+    $sheet->getStyle('A1:M1')->applyFromArray($styleArrayHeader);
+
+    // Установка автоматической ширины для столбцов
+    $sheet->getColumnDimension('A')->setAutoSize(true);
+
 
     // Заполнение данными из всей таблицы sys_activity_log
     $query = "SELECT * FROM sys_activity_log"; // Запрос для получения всех данных
@@ -44,10 +69,25 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     $row = 2; // Начинаем со второй строки
     if ($result->num_rows > 0) {
         while ($data = $result->fetch_assoc()) {
+            // Заполнение данными
             $sheet->setCellValue('A' . $row, $data['id']);
             $sheet->setCellValue('B' . $row, $data['actor_id']);
-            $sheet->setCellValue('C' . $row, $data['action_datetime']);
-            $sheet->setCellValue('D' . $row, $data['action']);
+            $sheet->setCellValue('D' . $row, $data['action_datetime']);
+            $sheet->setCellValue('G' . $row, $data['action']);
+            
+            $sheet->mergeCells('B' . $row . ':C' . $row); // Объединение для actor_id
+            $sheet->mergeCells('D' . $row . ':F' . $row); // Объединение для action_datetime
+            $sheet->mergeCells('G' . $row . ':M' . $row); // Объединение для action
+            // Применение границ к данным
+            $sheet->getStyle('A' . $row . ':M' . $row)->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['argb' => 'FF000000'], // Черный цвет
+                    ],
+                ],
+            ]);
+    
             $row++;
         }
     }
@@ -74,7 +114,33 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     <title>История операций</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Ваши стили */
+        .filter-container {
+            display: flex; /* Используем flexbox для расположения в ряд */
+            gap: 10px; /* Отступы между элементами */
+            align-items: center; /* Выравниваем элементы по центру по вертикали */
+        }
+
+        .filter-container input[type="text"],
+        .filter-container input[type="date"],
+        .filter-container button {
+            padding: 10px; /* Отступ внутри полей */
+            height: 40px; /* Одинаковая высота */
+            font-size: 14px; /* Размер шрифта */
+            border: 1px solid #ccc; /* Рамка полей */
+            border-radius: 4px; /* Закругление углов */
+            margin: 0; /* Убираем отступы */
+            box-sizing: border-box; /* Учитываем границы и отступы в общей ширине и высоте */
+        }
+
+        .filter-container button {
+            background-color: #8e8e8e; /* Цвет фона кнопки */
+            color: white; /* Цвет текста кнопки */
+            cursor: pointer; /* Указатель, меняется на "руку" при наведении */
+        }
+
+        .filter-container button:hover {
+            background-color: #4a4a4a; /* Цвет фона кнопки при наведении */
+        }
     </style>
 </head>
 <body>

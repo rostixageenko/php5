@@ -1,9 +1,9 @@
 Array
 (
-    [name] => e0fed932.jpg
-    [full_path] => e0fed932.jpg
+    [name] => images.jpeg
+    [full_path] => images.jpeg
     [type] => image/jpeg
-    [tmp_name] => C:\xampp\tmp\php1C9A.tmp
+    [tmp_name] => C:\xampp\tmp\php4DCA.tmp
     [error] => 0
-    [size] => 60833
+    [size] => 4961
 )

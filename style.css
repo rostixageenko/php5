@@ -136,6 +136,7 @@ input, select, textarea {
   margin: 3px;
   color: rgb(0, 0, 0); /* Устанавливаем цвет метки на серый */
 }
+
 .input-group input {
   height: 30px;
   width: 93%;

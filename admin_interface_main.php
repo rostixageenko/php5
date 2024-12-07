@@ -118,37 +118,51 @@ include('table_func.php'); // Подключаем файл с функциям�
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
-        <a href="personal_cabinet.php" class="button">Личный кабинет</a>
         <a href="sql_queries.php" class="button">SQL Запросы</a>
+        <a href="personal_cabinet.php" class="button">Личный кабинет</a>
     </div>
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
 <main>
     <div class="container">
         <div class="form-container">
-            <?php if ($selectedTable === 'users'): ?>
-                <h2>Добавить пользователя</h2>
-                <form method="POST" action="?table=users">
-                    <div class="input-group">
-                        <input type="text" name="login" placeholder="Логин" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="password" name="password" placeholder="Пароль" required>
-                    </div>
-                    <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput();" class="custom-select">
-                            <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
-                            <option value="0">Покупатель</option>
-                            <option value="1">Администратор</option>
-                            <option value="2">Сотрудник</option>
-                        </select>
-                    </div>
-                    <div class="input-group garage-input">
-                        <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
-                    </div>
-                    <button type="submit" name="add_users" class="btn">Добавить</button>
-                </form>
+        <h2>Сортировка данных</h2>
+        <form method="POST" action="?table=<?php echo htmlspecialchars($selectedTable); ?>">
+    <div class="input-group">
+        <select name="sort_field" id="sort_field" class="custom-select" onchange="changeColor(this)">
+            <option value="" disabled selected >Выберите поле для сортировки</option>
+            <?php
+            // Получаем названия полей для сортировки
+            switch ($selectedTable) {
+                case "users": 
+                echo "<option value='id'>ID</option>";
+                echo "<option value='login'>Логин</option>";
+                echo "<option value='type_role'>Тип роли</option>";
+                break;
+                case "auto_parts":
+                echo "<option value='id'>ID</option>";
+                echo "<option value='name_part'>Название запчасти</option>";
+                echo "<option value='article'>Артикул</option>";
+                echo "<option value='purchase_price'>Цена</option>";
+                break;
+            }
+            // Добавьте другие таблицы при необходимости
+            ?>
+        </select>
+    </div>
+    <div class="input-group">
+        <select name="sort_order" id="sort_order" class="custom-select" onchange="changeColor(this)">
+        <option value="" disabled selected >Выберите порядок сортировки</option>
+            <option value="ASC">По возрастанию</option>
+            <option value="DESC">По убыванию</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <button type="submit" class="btn" name="sort_table">Отсортировать</button>
+    </div>
+</form>
 
+            <?php if ($selectedTable === 'users'): ?>
                 <!-- Поиск пользователей -->
                 <h2>Поиск пользователей</h2>
                 <form method="POST" action="?table=users">
@@ -168,7 +182,27 @@ include('table_func.php'); // Подключаем файл с функциям�
                     </div>
                     <button type="submit" name="search_users" class="btn">Поиск</button>
                 </form>
-
+                <h2>Добавить пользователя</h2>
+                <form method="POST" action="?table=users">
+                    <div class="input-group">
+                        <input type="text" name="login" placeholder="Логин" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="password" placeholder="Пароль" required>
+                    </div>
+                    <div class="input-group">
+                        <select name="type_role" required onchange="toggleGarageInput();changeColor(this);" class="custom-select">
+                            <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
+                            <option value="0">Покупатель</option>
+                            <option value="1">Администратор</option>
+                            <option value="2">Сотрудник</option>
+                        </select>
+                    </div>
+                    <div class="input-group garage-input">
+                        <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
+                    </div>
+                    <button type="submit" name="add_users" class="btn">Добавить</button>
+                </form>
                 <!-- Изменить пароль пользователя -->
                 <h2>Изменить пароль пользователя</h2>
                 <form method="POST" action="?table=users&action=change_password">
@@ -182,6 +216,25 @@ include('table_func.php'); // Подключаем файл с функциям�
                 </form>
 
             <?php elseif ($selectedTable === 'auto_parts'): ?>
+                <h2>Поиск запчастей</h2>
+                <form method="POST" action="?table=auto_parts&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_part_id" placeholder="ID запчасти (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_article" placeholder="Артикул (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_part_name" placeholder="Название запчасти (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_car_id" placeholder="ID автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
+                </form>
                 <h2>Добавить запчасть</h2>
                 <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
                     <div class="input-group">
@@ -267,26 +320,6 @@ include('table_func.php'); // Подключаем файл с функциям�
                     </div>
                     <button type="submit" class="btn" name="update_image">Изменить картинку</button>
                 </form>
-
-                <h2>Поиск запчастей</h2>
-                <form method="POST" action="?table=auto_parts&action=search">
-                    <div class="input-group">
-                        <input type="text" name="search_part_id" placeholder="ID запчасти (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_article" placeholder="Артикул (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_part_name" placeholder="Название запчасти (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_car_id" placeholder="ID автомобиля (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
-                    </div>
-                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
-                </form>
             <?php else: ?>
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
             <?php endif; ?>
@@ -307,13 +340,13 @@ include('table_func.php'); // Подключаем файл с функциям�
 
                 switch ($selectedTable) {
                     case 'users':
-                        if (!isset($_POST['search_users'])) {
+                        if (!isset($_POST['search_users'])&&!isset($_POST['sort_table'])) {
                             $users = $usersTable->fetchLimited($rowCount);
                         }
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
                     case 'auto_parts':
-                        if (!isset($_POST['search_part'])) {
+                        if (!isset($_POST['search_parts'])&&!isset($_POST['sort_table'])) {
                             $parts = $partsTable->fetchLimited($rowCount);
                         }
                         $partsTable->renderTable($parts, 'Запчасти');

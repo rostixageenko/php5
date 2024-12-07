@@ -75,8 +75,14 @@ class TableFunction {
     }
 
     private function executeQuery($query) {
-        $result = mysqli_query($this->db, $query);
-        return mysqli_fetch_all($result, MYSQLI_ASSOC);
+        // Выполняем запрос
+        if ($result = mysqli_query($this->db, $query)) {
+            // Возвращаем ассоциативный массив результатов
+            return mysqli_fetch_all($result, MYSQLI_ASSOC);
+        } else {
+
+            die('Ошибка выполнения запроса: ' . mysqli_error($this->db));
+        }
     }
 
     public function deleteUser($id) {
@@ -96,6 +102,7 @@ class TableFunction {
     }
     public function renderTable($data, $title) {
         echo "<h2>" . htmlspecialchars($title) . "</h2>";
+        
         if (count($data) > 0) {
             echo "<table>";
             echo "<tr>";
@@ -148,6 +155,11 @@ class TableFunction {
                             echo "Изображение недоступно";
                         }
                         echo "</td>";
+                    } elseif ($key === 'password') {
+                        // Если это захешированный пароль
+                        echo "<td>";
+                        echo "Пароль недоступен для просмотра"; // или используйте $this->hashPassword($cell) если вы хотите показать хеш
+                        echo "</td>";
                     } else {
                         // Обычная ячейка (число или строка)
                         echo "<td>" . htmlspecialchars($cell) . "</td>";
@@ -177,8 +189,19 @@ class TableFunction {
         json_decode($string);
         return (json_last_error() === JSON_ERROR_NONE);
     }
+   
+    public function universalSort(string $sortField, string $order): array {
+        // Формируем SQL-запрос
+        
+        $query = "SELECT * FROM `$this->tableName` ORDER BY `$sortField` $order";
+        $file = 'debug.txt';
+        $data = "$query, $sortField, $order";
+        file_put_contents($file, $data);
+       
+        // Выполняем запрос
+       return $this->executeQuery($query);
+    }
 }
-
 // Подключение к базе данных
 include('server.php');
 
@@ -209,6 +232,22 @@ $cars = $carsTable->fetchLimited($rowCount);
 $message = "";
 $messageType = "success"; // По умолчанию тип сообщения
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_field'], $_POST['sort_order'])&&isset($_POST['sort_table'])) {
+    $sortField =  isset($_POST['sort_field']) ? trim($_POST['sort_field']) : '';
+    $sort_order=  isset($_POST['sort_order']) ? trim($_POST['sort_order']) : '';
+ // true для по возрастанию, false для по убыванию
+    // Сортируем данные
+    switch ($selectedTable) {
+        case 'users':
+            $users = $usersTable->universalSort( $sortField, $sort_order);
+            break;
+        case 'auto_parts':
+            $parts = $partsTable->universalSort( $sortField, $sort_order); 
+            break;      
+    }
+
+} 
+
 // Поиск пользователей
 $searchConditions = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
@@ -237,9 +276,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
     } else {
         $message = ""; // Очистка сообщения, если нашли пользователей
     }
-} else {
-    // Если это не поиск, просто загружаем всех пользователей
-    $users = $usersTable->fetch();
 }
 
 // Добавление нового пользователя
@@ -398,8 +434,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
 if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $response = ['success' => false, 'message' => ''];
 
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
@@ -466,18 +502,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
                 $stmt_staff->close();
             }
 
-            $response['success'] = true;
-            $response['message'] = "Пользователь успешно удален.";
+            $message = "Пользователь успешно удален.";
+            $messageType = "success";
         } else {
-            $response['message'] = "Ошибка: пользователь не найден или не удалось удалить.";
+            $message = "Ошибка: пользователь не найден или не удалось удалить.";
+            $messageType = "error";
         }
     } else {
-        $response['message'] = "Ошибка: пользователь не найден.";
+        $message ="Ошибка: пользователь не найден.";
+        $messageType = "error";
     }
 
-    $stmt->close();
-    echo json_encode($response);
-    exit;
 }
 
 //добавление запчасти
@@ -586,7 +621,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
             $type_role=$_SESSION['type_role'];
 
             // Логируем действие
-            $Actstr = "Пользователь $login типа $type_role запчасть пользователя, артикул: $article";
+            $Actstr = "Пользователь $login типа '$type_role' добавил запчасть, артикул: $article";
             $dbExecutor->insertAction($id_user, $Actstr);
 
             $stmt = $db->prepare("INSERT INTO auto_parts (name_parts, article, `condition`, purchase_price, description, idcar, idgarage, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -713,6 +748,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
             $stmt->bind_param($types, ...$updateValues);
 
             if ($stmt->execute()) {
+                $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role= $_SESSION['type_role'];
+
+            // Логируем действие
+            $Actstr = "Пользователь $login типа '$type_role' изменил информацию о запчасти $search_field=$search_value";
+            $dbExecutor->insertAction($id_user, $Actstr);
+
                 $message = 'Запчасть успешно изменена.';
                 $messageType = 'success';
             } else {
@@ -799,6 +842,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         $stmt->bind_param("si", $fileData, $partId);
 
         if ($stmt->execute()) {
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role= $_SESSION['type_role'];
+            // Логируем действие
+            $Actstr = "Пользователь $login типа '$type_role' изменил изображение для запчасти id=$partId";
+            $dbExecutor->insertAction($id_user, $Actstr);
+
             $message = "Изображение успешно обновлено.";
             $messageType = "success"; // Успех
         } else {
@@ -811,14 +861,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
 }
 
 //поиск автозапчастей
-$searchConditions = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     $partId = isset($_POST['search_part_id']) ? trim($_POST['search_part_id']) : '';
     $article = isset($_POST['search_article']) ? trim($_POST['search_article']) : '';
     $partName = isset($_POST['search_part_name']) ? trim($_POST['search_part_name']) : '';
     $carId = isset($_POST['search_car_id']) ? trim($_POST['search_car_id']) : '';
     $garageId = isset($_POST['search_garage_id']) ? trim($_POST['search_garage_id']) : '';
-
+    
+    $searchConditions = [];
     // Добавляем условия поиска только для заполненных полей
     if (!empty($partId)) {
         $searchConditions[] = "id = " . intval($partId);
@@ -844,10 +895,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
         $message = "Запчасти не найдены.";
         $messageType = "error"; // Ошибка
     } else {
+        
         $message = ""; // Очистка сообщения, если нашли запчасти
     }
-} else {
-    // Если это не поиск, просто загружаем все запчасти
-    $parts = $partsTable->fetch();
 }
+
 ?>
