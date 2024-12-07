@@ -167,7 +167,7 @@ class TableFunction {
                 }
                 // Кнопка удаления
                 echo "<td class='table-cell-delete'>";
-                echo "<form method='POST' action='?table=users&action=delete' class='delete-form'>";
+                echo "<form method='POST' action='?table=$this->tableName&action=delete' class='delete-form'>";
                 echo "<input type='hidden' name='id' value='" . htmlspecialchars($row['id']) . "'>";
                 echo "<button type='submit' class='delete-btn'>Удалить</button>";
                 echo "</form>";
@@ -323,8 +323,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' &&isset(
                         if ($stmt->execute()) {
                             $old_login = $_SESSION['login'];
                             $old_id_user = $_SESSION['user_id'];
-                    
-                            $Actstr = "Пользователь $old_login типа '0' добавил нового пользователя $login типа $type_role.";
+                            $type_role1=$_SESSION['type_role'];
+
+                            $Actstr = "Пользователь $old_login типа '$type_role1' добавил нового пользователя $login типа $type_role.";
                             $dbExecutor->insertAction($old_id_user, $Actstr);
 
                             // Вставка в таблицу staff или customers в зависимости от type_role
@@ -409,8 +410,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' && isset
             if ($stmt->execute() && $stmt->affected_rows > 0) {
                 $login = $_SESSION['login'];
                 $id_user = $_SESSION['user_id'];
-                
-                $Actstr = "Пользователь $login типа '0' изменил пароль пользователю $change_login.";
+                $type_role=$_SESSION['type_role'];
+
+                $Actstr = "Пользователь $login типа '$type_role' изменил пароль пользователю $change_login.";
                 $dbExecutor->insertAction($id_user, $Actstr);
                 $message = "Пароль пользователя изменен успешно.";
                 $messageType = "success"; // Успешное сообщение
@@ -435,7 +437,8 @@ if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
+//удаление пользователя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete'&& $_GET['table'] === 'users') {
 
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
@@ -454,9 +457,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         if ($usersTable->deleteUser($id) === 1) {
             $login = $_SESSION['login'];
             $id_user = $_SESSION['user_id'];
+            $type_role1=$_SESSION['type_role'];
 
             // Логируем действие
-            $Actstr = "Пользователь $login типа '0' удалил пользователя $login_delete_user.";
+            $Actstr = "Пользователь $login типа '$type_role1' удалил пользователя $login_delete_user.";
             $dbExecutor->insertAction($id_user, $Actstr);
 
             // Удаляем из соответствующей таблицы
@@ -898,6 +902,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
         
         $message = ""; // Очистка сообщения, если нашли запчасти
     }
+}
+
+//удаление пользователя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete'&& $_GET['table'] === 'auto_parts') {
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        // Удаляем запись
+        
+       $db->query("ALTER TABLE cart_auto_parts DROP FOREIGN KEY cart_auto_parts_ibfk_2;");
+       $db->query("ALTER TABLE history_operations_with_autoparts DROP FOREIGN KEY history_operations_with_autoparts_ibfk_2;");
+    
+        if ($partsTable->deleteUser($id) === 1) {
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role=$_SESSION['type_role'];
+            // Логируем действие
+            $Actstr = "Пользователь $login типа '$type_role' удалил автозапчасть id=$id.";
+            $dbExecutor->insertAction($id_user, $Actstr);
+
+                $stmt_cart = $db->prepare("DELETE FROM history_operations_with_autoparts WHERE idautoparts = ?");
+                $stmt_cart->bind_param("i", $id);
+                $stmt_cart->execute();
+                $stmt_cart->close();
+                $stmt_customers = $db->prepare("DELETE FROM cart_auto_parts WHERE idautoparts = ?");
+                $stmt_customers->bind_param("i", $id);
+                $stmt_customers->execute();
+                $stmt_customers->close();
+            
+            $message = "Запчасть успешно удален.";
+            $messageType = "success";
+        } else {
+            $message = "Ошибка: запчасть не найдена или не удалось удалить.";
+            $messageType = "error";
+        }
+
+    $db->query("ALTER TABLE history_operations_with_autoparts ADD CONSTRAINT `history_operations_with_autoparts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
+    $db->query("ALTER TABLE  cart_auto_parts ADD CONSTRAINT `cart_auto_parts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
 }
 
 ?>
