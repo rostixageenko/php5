@@ -1,9 +1,0 @@
-Array
-(
-    [name] => logo_disk.avif
-    [full_path] => logo_disk.avif
-    [type] => image/avif
-    [tmp_name] => C:\xampp\tmp\php5CF0.tmp
-    [error] => 0
-    [size] => 10997
-)

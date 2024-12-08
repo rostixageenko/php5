@@ -144,49 +144,40 @@ include('table_func.php'); // Подключаем файл с функциям�
         }
     </style>
     <script>
-        function toggleGarageInput() {
-            const roleSelect = document.querySelector('select[name="type_role"]');
-            const garageInput = document.querySelector('.garage-input');
-            if (roleSelect.value === "2") { // Если выбран "Сотрудник"
+        function toggleGarageInput(selectElement) {
+            const garageInput = selectElement.closest('form').querySelector('.garage-input');
+            if (selectElement.value === "2") { // Если выбран "Сотрудник"
                 garageInput.style.display = 'block'; // Показываем поле
             } else {
                 garageInput.style.display = 'none'; // Скрываем поле
             }
         }
         function showModal(type) {
-            const modal = document.getElementById('myModal');
-            modal.style.display = "block";
-            document.getElementById('modalType').value = type;
+    const modal = document.getElementById('myModal');
+    modal.style.display = "block";
+    document.getElementById('modalType').value = type;
 
-            if (type === 'export') {
-                document.getElementById('exportSection').style.display = 'block';
-                document.getElementById('uploadSection').style.display = 'none';
-            } else {
-                document.getElementById('exportSection').style.display = 'none';
-                document.getElementById('uploadSection').style.display = 'block';
-            }
-        }
+    // Показать соответствующий раздел
+    if (type === 'export') {
+        document.getElementById('exportSection').style.display = 'block';
+        document.getElementById('uploadSection').style.display = 'none';
+    } else {
+        document.getElementById('exportSection').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'block';
+    }
+}
 
-        function closeModal() {
-            document.getElementById('myModal').style.display = "none";
-        }
+function closeModal() {
+    document.getElementById('myModal').style.display = 'none';
+}
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('myModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        function toggleGarageInput() {
-            const roleSelect = document.querySelector('select[name="type_role"]');
-            const garageInput = document.querySelector('.garage-input');
-            if (roleSelect.value === "2") { // Если выбран "Сотрудник"
-                garageInput.style.display = 'block'; // Показываем поле
-            } else {
-                garageInput.style.display = 'none'; // Скрываем поле
-            }
-        }
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('myModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
     </script>
 </head>
 <body>
@@ -216,22 +207,22 @@ include('table_func.php'); // Подключаем файл с функциям�
 </header>
 
 <!-- Модальное окно -->
-<div id="myModal" class="modal">
+<div id="myModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <form method="POST" enctype="multipart/form-data" action="export.php">
+        <form method="POST" enctype="multipart/form-data" action="process.php">
             <input type="hidden" id="modalType" name="modalType">
             <div id="exportSection" style="display:none;">
                 <h2>Выгрузка базы данных</h2>
                 <label for="filename">Введите имя файла:</label>
-                <input type="text" name="filename" placeholder="database_export.json" style="width: 200px;"> <!-- Уменьшен размер -->
+                <input type="text" name="filename" placeholder="database_export.json" style="width: 200px;">
                 <button type="submit" name="export" class="custom-btn">Выгрузить</button>
             </div>
             <div id="uploadSection" style="display:none;">
                 <h2>Загрузка базы данных</h2>
                 <label for="json_file">Выберите JSON файл:</label>
-                <input type="file" name="json_file" accept=".json" required style="display: none;" id="file-input"> <!-- Скрытое поле -->
-                <label for="file-input" class="custom-file-label">Выберите файл</label> <!-- Кастомная кнопка -->
+                <input type="file" name="json_file" accept=".json" required style="display: none;" id="file-input">
+                <label for="file-input" class="custom-file-label">Выберите файл</label>
                 <button type="submit" name="upload" class="custom-btn">Загрузить</button>
             </div>
         </form>
@@ -306,14 +297,14 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput(); changeColor(this);" class="custom-select">
+                        <select name="type_role" required onchange="toggleGarageInput(this);changeColor(this)" class="custom-select">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
                             <option value="2">Сотрудник</option>
                         </select>
                     </div>
-                    <div class="input-group garage-input" style="display: none;"> <!-- Скрываем по умолчанию -->
+                    <div class="input-group garage-input" style="display: none;">
                         <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
                     </div>
                     <button type="submit" name="add_users" class="btn">Добавить</button>
