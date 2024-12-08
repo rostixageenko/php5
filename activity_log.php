@@ -25,7 +25,8 @@ try {
 }
 
 // Проверка на скачивание Excel
-if (isset($_GET['export']) && $_GET['export'] === 'excel') {
+if (isset($_GET['export']) && $_GET['export'] === 'excel') 
+{
     include 'vendor/autoload.php'; // Подключаем автозагрузчик Composer
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -101,8 +102,61 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
     exit();
+
+
 }
 
+// Проверка на скачивание JSON
+if (isset($_GET['export']) && $_GET['export'] === 'json') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Disposition: attachment; filename="activity_log.json"');
+    header('Cache-Control: no-cache');
+
+    $query = "SELECT * FROM sys_activity_log"; // Запрос для получения всех данных
+    $result = $conn->query($query);
+
+    $data = [];
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row; // Добавление каждой строки в массив
+        }
+    }
+
+    // Кодирование в JSON с поддержкой UTF-8 и форматированием
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Конвертация массива в JSON и вывод
+    exit();
+}
+
+// Проверка на скачивание XML
+if (isset($_GET['export']) && $_GET['export'] === 'xml') {
+    header('Content-Type: application/xml; charset=utf-8');
+    header('Content-Disposition: attachment; filename="activity_log.xml"');
+    header('Cache-Control: no-cache');
+
+    // Создание нового XML документа
+    $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><activity_log/>');
+
+    $query = "SELECT * FROM sys_activity_log"; // Запрос для получения всех данных
+    $result = $conn->query($query);
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $entry = $xml->addChild('entry');
+            foreach ($row as $key => $value) {
+                $entry->addChild($key, htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8')); // Экранируем специальные символы
+            }
+        }
+    }
+
+    // Форматирование XML с использованием DOMDocument
+    $dom = new DOMDocument('1.0', 'UTF-8');
+    $dom->preserveWhiteSpace = false;
+    $dom->formatOutput = true;
+    $dom->loadXML($xml->asXML());
+
+    echo $dom->saveXML(); // Выводим отформатированный XML документ
+    exit();
+}
 // Начало HTML
 ?>
 
@@ -114,6 +168,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     <title>История операций</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        tr:nth-child(even) {
+        background-color: #f9f9f9; /* Чередующиеся цвета строк */
+        }
         .filter-container {
             display: flex; /* Используем flexbox для расположения в ряд */
             gap: 10px; /* Отступы между элементами */
@@ -203,9 +260,10 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
             ?>
         </tbody>
     </table>
-
-    <!-- Кнопка для скачивания Excel -->
+    <!-- Кнопка для скачивания Excel и выгрузки в json -->
     <a href="activity_log.php?export=excel" class="btn">Скачать в Excel</a>
+    <a href="activity_log.php?export=json" class="btn">Выгрузить в JSON</a>
+    <a href="activity_log.php?export=xml" class="btn">Выгрузить в XML</a>
 </main>
 
 </body>

@@ -158,6 +158,17 @@ input, select, textarea {
   margin-bottom: 15px; /* Увеличенный отступ снизу */
 }
 
+.custom-btn{
+  margin: 10px;
+  padding: 10px;
+  font-size: 15px;
+  color: white;
+  background: #8e8e8e; /* Серый фон для кнопок */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer; /* Указатель при наведении */
+  margin-bottom: 15px; 
+}
 /* Стили для кнопки удаления */
 .delete-btn {
   background-color: #8e8e8e; /* Серый фон для кнопки удаления */
@@ -211,6 +222,38 @@ input, select, textarea {
   margin: 0;
 }
 
+/* Основные стили для кастомных кнопок */
+.custom-button {
+  background-color: white; /* Белый фон */
+  color: black; /* Черный цвет текста */
+  padding: 12px 16px; /* Внутренние отступы */
+  border: none; /* Без рамки */
+  border-radius: 4px; /* Скругленные углы */
+  cursor: pointer; /* Указатель при наведении */
+  font-size: 18px; /* Увеличенный размер шрифта */
+  font-weight: bold; /* Жирное начертание шрифта */
+  transition: background-color 0.3s, color 0.3s; /* Плавный переход */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Легкая тень */
+}
+
+/* Стили для кастомных кнопок при наведении */
+.custom-button:hover {
+  background-color: #ddd; /* Фон при наведении */
+  color: black; /* Цвет текста при наведении */
+}
+
+/* Стили для кастомных кнопок при нажатии */
+.custom-button:active {
+  background-color: #ccc; /* Темнее при нажатии */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Уменьшение тени */
+}
+
+/* Стили для кастомных кнопок в выпадающем меню */
+.dropdown .custom-button {
+  display: block; /* Блочный элемент для выпадающего меню */
+  width: 100%; /* Занимает полную ширину */
+  text-align: left; /* Выравнивание текста по левому краю */
+}
 .logo {
   max-height: 50px; 
   margin-right: 20px; 

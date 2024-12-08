@@ -1,5 +1,6 @@
 <?php
 include('table_func.php'); // Подключаем файл с функциями и классами
+
 ?>
 
 <!DOCTYPE html>
@@ -87,8 +88,96 @@ include('table_func.php'); // Подключаем файл с функциям�
         .garage-input {
             display: none; /* Скрываем поле по умолчанию */
         }
+        .modal {
+            display: none;  /* Скрыто по умолчанию */
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px; 
+        }
+       /* Стили для модального окна */
+        .modal-content {
+            width: 400px; /* Уменьшенная ширина модального окна */
+            margin: auto; /* Центрирование модального окна */
+            padding: 20px; /* Внутренние отступы */
+            background-color: white; /* Белый фон */
+            border-radius: 8px; /* Скругленные углы */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+        }
+
+/* Остальные стили остаются без изменений */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Стили для кастомного поля загрузки */
+        .custom-file-label {
+            display: inline-block;
+            width: 200px; /* Ширина метки */
+            padding: 10px; /* Уменьшенные внутренние отступы */
+            background-color: white; /* Белый фон */
+            border: 1px solid #ccc; /* Серая рамка */
+            border-radius: 4px; /* Скругленные углы */
+            text-align: center; /* Выравнивание текста по центру */
+            cursor: pointer; /* Указатель при наведении */
+            transition: background-color 0.3s, border-color 0.3s; /* Плавный переход */
+            font-size: 14px; /* Размер шрифта */
+        }
+
+        /* Эффект наведения для кастомного поля загрузки */
+        .custom-file-label:hover {
+            background-color: #f0f0f0; /* Светлый фон при наведении */
+            border-color: #888; /* Изменение цвета рамки при наведении */
+        }
     </style>
     <script>
+        function toggleGarageInput() {
+            const roleSelect = document.querySelector('select[name="type_role"]');
+            const garageInput = document.querySelector('.garage-input');
+            if (roleSelect.value === "2") { // Если выбран "Сотрудник"
+                garageInput.style.display = 'block'; // Показываем поле
+            } else {
+                garageInput.style.display = 'none'; // Скрываем поле
+            }
+        }
+        function showModal(type) {
+            const modal = document.getElementById('myModal');
+            modal.style.display = "block";
+            document.getElementById('modalType').value = type;
+
+            if (type === 'export') {
+                document.getElementById('exportSection').style.display = 'block';
+                document.getElementById('uploadSection').style.display = 'none';
+            } else {
+                document.getElementById('exportSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('myModal').style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('myModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
         function toggleGarageInput() {
             const roleSelect = document.querySelector('select[name="type_role"]');
             const garageInput = document.querySelector('.garage-input');
@@ -102,7 +191,7 @@ include('table_func.php'); // Подключаем файл с функциям�
 </head>
 <body>
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo">
+<img src="image/logo5.png" alt="Логотип" class="logo">
     <div class="menu">
         <div class="dropdown">
             <button class="button">База данных</button>
@@ -115,6 +204,8 @@ include('table_func.php'); // Подключаем файл с функциям�
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
+                <button onclick="showModal('export')" class="custom-button">Выгрузить</button>
+                <button onclick="showModal('upload')" class="custom-button">Загрузить</button>
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
@@ -123,6 +214,30 @@ include('table_func.php'); // Подключаем файл с функциям�
     </div>
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
+
+<!-- Модальное окно -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <form method="POST" enctype="multipart/form-data" action="export.php">
+            <input type="hidden" id="modalType" name="modalType">
+            <div id="exportSection" style="display:none;">
+                <h2>Выгрузка базы данных</h2>
+                <label for="filename">Введите имя файла:</label>
+                <input type="text" name="filename" placeholder="database_export.json" style="width: 200px;"> <!-- Уменьшен размер -->
+                <button type="submit" name="export" class="custom-btn">Выгрузить</button>
+            </div>
+            <div id="uploadSection" style="display:none;">
+                <h2>Загрузка базы данных</h2>
+                <label for="json_file">Выберите JSON файл:</label>
+                <input type="file" name="json_file" accept=".json" required style="display: none;" id="file-input"> <!-- Скрытое поле -->
+                <label for="file-input" class="custom-file-label">Выберите файл</label> <!-- Кастомная кнопка -->
+                <button type="submit" name="upload" class="custom-btn">Загрузить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <main>
     <div class="container">
         <div class="form-container">
@@ -191,19 +306,19 @@ include('table_func.php'); // Подключаем файл с функциям�
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput();changeColor(this);" class="custom-select">
+                        <select name="type_role" required onchange="toggleGarageInput(); changeColor(this);" class="custom-select">
                             <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
                             <option value="0">Покупатель</option>
                             <option value="1">Администратор</option>
                             <option value="2">Сотрудник</option>
                         </select>
                     </div>
-                    <div class="input-group garage-input">
+                    <div class="input-group garage-input" style="display: none;"> <!-- Скрываем по умолчанию -->
                         <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
                     </div>
                     <button type="submit" name="add_users" class="btn">Добавить</button>
                 </form>
-                <!-- Изменить пароль пользователя -->
+                    <!-- Изменить пароль пользователя -->
                 <h2>Изменить пароль пользователя</h2>
                 <form method="POST" action="?table=users&action=change_password">
                     <div class="input-group">

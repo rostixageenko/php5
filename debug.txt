@@ -1,9 +1,9 @@
 Array
 (
-    [name] => images.jpeg
-    [full_path] => images.jpeg
-    [type] => image/jpeg
-    [tmp_name] => C:\xampp\tmp\php4DCA.tmp
+    [name] => logo_disk.avif
+    [full_path] => logo_disk.avif
+    [type] => image/avif
+    [tmp_name] => C:\xampp\tmp\php5CF0.tmp
     [error] => 0
-    [size] => 4961
+    [size] => 10997
 )
