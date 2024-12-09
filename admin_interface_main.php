@@ -1,6 +1,5 @@
 <?php
 include('table_func.php'); // Подключаем файл с функциями и классами
-
 ?>
 
 <!DOCTYPE html>
@@ -57,132 +56,40 @@ include('table_func.php'); // Подключаем файл с функциям�
             cursor: pointer; /* Указатель при наведении */
             width: 100%; /* Кнопка занимает всю ширину */
         }
-        /* Стили для поля загрузки изображения */
-        .upload-photo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%; /* Ширина 100% */
-            height: 100px; /* Высота области загрузки */
-            border: 2px solid gray; /* Обычная рамка */
-            border-radius: 5px; /* Скругленные углы */
-            cursor: pointer; /* Указатель при наведении */
-            position: relative; /* Для абсолютного позиционирования изображения */
-            overflow: hidden; /* Убедитесь, что изображение не выходит за границы */
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { 
+            background-color: #fefefe; 
+            margin: 15% auto; 
+            padding: 20px; 
+            border: 1px solid #888; 
+            width: 50%; /* Уменьшенная ширина модального окна */
+            max-width: 400px; /* Максимальная ширина для больших экранов */
         }
-        .upload-photo img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain; /* Сохраняет соотношение сторон */
-            display: none; /* Скрываем изображение по умолчанию */
-        }
-        .upload-photo:hover {
-            border-color: #3c763d; /* Изменение цвета рамки при наведении */
-            background-color: rgba(76, 175, 80, 0.1); /* Легкий фон при наведении */
-        }
-        .upload-icon {
-            font-size: 30px; /* Размер значка */
-            color: gray; /* Цвет значка */
-            position: absolute; /* Позволяет центровать иконку внутри рамки */
-        }
-        .garage-input {
-            display: none; /* Скрываем поле по умолчанию */
-        }
-        .modal {
-            display: none;  /* Скрыто по умолчанию */
-            position: fixed; 
-            z-index: 1000; 
-            left: 0; top: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgb(0,0,0); 
-            background-color: rgba(0,0,0,0.4); 
-            padding-top: 60px; 
-        }
-       /* Стили для модального окна */
-        .modal-content {
-            width: 400px; /* Уменьшенная ширина модального окна */
-            margin: auto; /* Центрирование модального окна */
-            padding: 20px; /* Внутренние отступы */
-            background-color: white; /* Белый фон */
-            border-radius: 8px; /* Скругленные углы */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
-        }
-
-/* Остальные стили остаются без изменений */
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        /* Стили для кастомного поля загрузки */
-        .custom-file-label {
-            display: inline-block;
-            width: 200px; /* Ширина метки */
-            padding: 10px; /* Уменьшенные внутренние отступы */
-            background-color: white; /* Белый фон */
-            border: 1px solid #ccc; /* Серая рамка */
-            border-radius: 4px; /* Скругленные углы */
-            text-align: center; /* Выравнивание текста по центру */
-            cursor: pointer; /* Указатель при наведении */
-            transition: background-color 0.3s, border-color 0.3s; /* Плавный переход */
-            font-size: 14px; /* Размер шрифта */
-        }
-
-        /* Эффект наведения для кастомного поля загрузки */
-        .custom-file-label:hover {
-            background-color: #f0f0f0; /* Светлый фон при наведении */
-            border-color: #888; /* Изменение цвета рамки при наведении */
-        }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+        .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
     </style>
     <script>
-        function toggleGarageInput(selectElement) {
-            const garageInput = selectElement.closest('form').querySelector('.garage-input');
-            if (selectElement.value === "2") { // Если выбран "Сотрудник"
-                garageInput.style.display = 'block'; // Показываем поле
-            } else {
-                garageInput.style.display = 'none'; // Скрываем поле
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('openModal').onclick = function() {
+                document.getElementById('myModal').style.display = 'block';
             }
-        }
-        function showModal(type) {
-    const modal = document.getElementById('myModal');
-    modal.style.display = "block";
-    document.getElementById('modalType').value = type;
 
-    // Показать соответствующий раздел
-    if (type === 'export') {
-        document.getElementById('exportSection').style.display = 'block';
-        document.getElementById('uploadSection').style.display = 'none';
-    } else {
-        document.getElementById('exportSection').style.display = 'none';
-        document.getElementById('uploadSection').style.display = 'block';
-    }
-}
+            document.querySelector('.close').onclick = function() {
+                document.getElementById('myModal').style.display = 'none';
+            }
 
-function closeModal() {
-    document.getElementById('myModal').style.display = 'none';
-}
-
-// Закрытие модального окна при клике вне его
-window.onclick = function(event) {
-    const modal = document.getElementById('myModal');
-    if (event.target === modal) {
-        closeModal();
-    }
-}
+            window.onclick = function(event) {
+                const modal = document.getElementById('myModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
     </script>
 </head>
 <body>
 <header>
-<img src="image/logo5.png" alt="Логотип" class="logo">
+    <img src="image/logo5.png" alt="Логотип" class="logo">
     <div class="menu">
         <div class="dropdown">
             <button class="button">База данных</button>
@@ -195,8 +102,7 @@ window.onclick = function(event) {
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
-                <button onclick="showModal('export')" class="custom-button">Выгрузить</button>
-                <button onclick="showModal('upload')" class="custom-button">Загрузить</button>
+                <button id="openModal" class="custom-button">Выгрузить базу данных</button> 
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
@@ -207,27 +113,40 @@ window.onclick = function(event) {
 </header>
 
 <!-- Модальное окно -->
-<div id="myModal" class="modal" style="display:none;">
+<div id="myModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <form method="POST" enctype="multipart/form-data" action="process.php">
-            <input type="hidden" id="modalType" name="modalType">
-            <div id="exportSection" style="display:none;">
-                <h2>Выгрузка базы данных</h2>
-                <label for="filename">Введите имя файла:</label>
-                <input type="text" name="filename" placeholder="database_export.json" style="width: 200px;">
-                <button type="submit" name="export" class="custom-btn">Выгрузить</button>
-            </div>
-            <div id="uploadSection" style="display:none;">
-                <h2>Загрузка базы данных</h2>
-                <label for="json_file">Выберите JSON файл:</label>
-                <input type="file" name="json_file" accept=".json" required style="display: none;" id="file-input">
-                <label for="file-input" class="custom-file-label">Выберите файл</label>
-                <button type="submit" name="upload" class="custom-btn">Загрузить</button>
-            </div>
+        <span class="close">&times;</span>
+        <h2>Экспорт в JSON</h2>
+        <form id="exportForm" method="POST" action="export.php">
+            <label for="table">Выберите таблицу:</label>
+            <select id="table" name="table" required>
+                <option value="auto_parts">auto_parts</option>
+                <option value="cars">cars</option>
+                <option value="cart">cart</option>
+                <option value="cart_auto_parts">cart_auto_parts</option>
+                <option value="car_brands">car_brands</option>
+                <option value="customers">customers</option>
+                <option value="departments">departments</option>
+                <option value="garage">garage</option>
+                <option value="garage_car_brands">garage_car_brands</option>
+                <option value="history_operations_with_autoparts">history_operations_with_autoparts</option>
+                <option value="history_operations_with_car">history_operations_with_car</option>
+                <option value="inventory">inventory</option>
+                <option value="orders">orders</option>
+                <option value="posts">posts</option>
+                <option value="staff">staff</option>
+                <option value="staff_garage">staff_garage</option>
+                <option value="suppliers">suppliers</option>
+                <option value="sys_activity_log">sys_activity_log</option>
+                <option value="users">users</option>
+            </select>
+            <button type="submit" name="export" class="custom-btn">Выгрузить</button>
         </form>
     </div>
 </div>
+
+</body>
+</html>
 
 <main>
     <div class="container">

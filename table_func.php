@@ -15,6 +15,7 @@ class TableFunction {
         }
         return $this->executeQuery($query);
     }
+
     public function updateRecord($table, $searchField, $searchValue, $data) {
         // Проверка на наличие обязательных параметров
         if (empty($table) || empty($searchField) || empty($searchValue) || empty($data)) {
@@ -65,6 +66,7 @@ class TableFunction {
             ];
         }
     }
+
     public function fetchLimited($limit, $conditions = []) {
         $query = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
         if (!empty($conditions)) {
@@ -80,7 +82,6 @@ class TableFunction {
             // Возвращаем ассоциативный массив результатов
             return mysqli_fetch_all($result, MYSQLI_ASSOC);
         } else {
-
             die('Ошибка выполнения запроса: ' . mysqli_error($this->db));
         }
     }
@@ -100,6 +101,7 @@ class TableFunction {
             $stmt->close();
         }
     }
+
     public function renderTable($data, $title) {
         echo "<h2>" . htmlspecialchars($title) . "</h2>";
         
@@ -115,53 +117,32 @@ class TableFunction {
             echo "</tr>";
     
             foreach ($data as $row) {
-                // Добавляем data-id к строке для идентификации
                 echo "<tr data-id='" . htmlspecialchars($row['id']) . "'>";
                 foreach ($row as $key => $cell) {
-                    // Проверяем, является ли ячейка строкой и содержит ли корректный JSON
-                    if (is_string($cell) && $this->is_json($cell)) {
-                        // Декодируем JSON
-                        $jsonData = json_decode($cell, true);
+                    if ($key === 'photo' && !empty($cell)) {
                         echo "<td>";
-    
-                        // Проверяем, является ли декодированное значение массивом
-                        if (is_array($jsonData)) {
-                            $listItems = [];
-                            foreach ($jsonData as $jsonKey => $jsonValue) {
-                                // Формируем строку для списка
-                                $listItems[] = htmlspecialchars($jsonKey) . ": " . htmlspecialchars($jsonValue);
-                            }
-                            // Выводим список
-                            echo implode("; ", $listItems);
-                        } else {
-                            // Если это не массив, выводим сообщение
-                            echo "Некорректные данные";
-                        }
-    
-                        echo "</td>";
-                    } elseif ($key === 'photo' && !empty($cell)) {
-                        // Если это поле для изображения, выводим его
-                        echo "<td>";
-                        // Проверяем, что содержимое является BLOB-данными
                         if (is_string($cell)) {
-                            // Определяем MIME-тип изображения
-                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                            $mimeType = finfo_buffer($finfo, $cell);
-                            finfo_close($finfo);
+                            // Проверка размера изображения
+                            if (strlen($cell) > 55 * 1024) { // Если размер больше 55 КБ
+                                echo "<div style='color: red;'>Ошибка: размер изображения превышает 55 КБ.</div>";
+                            } else {
+                                // Получение типа файла
+                                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                                $mimeType = finfo_buffer($finfo, $cell);
+                                finfo_close($finfo);
     
-                            // Выводим изображение с соответствующим MIME-типом
-                            echo "<img src='data:{$mimeType};base64," . base64_encode($cell) . "' alt='Изображение' style='max-width: 100px; height: auto;'>";
+                                // Контейнер для изображения
+                                echo "<div style='width: 300px; height: 200px; overflow: hidden; border: 1px solid #ccc; padding: 10px;'>";
+                                echo "<img src='data:{$mimeType};base64," . base64_encode($cell) . "' alt='Изображение' style='width: 100%; height: 100%; object-fit: contain;'>";
+                                echo "</div>";
+                            }
                         } else {
                             echo "Изображение недоступно";
                         }
                         echo "</td>";
                     } elseif ($key === 'password') {
-                        // Если это захешированный пароль
-                        echo "<td>";
-                        echo "Пароль недоступен для просмотра"; // или используйте $this->hashPassword($cell) если вы хотите показать хеш
-                        echo "</td>";
+                        echo "<td>Пароль недоступен для просмотра</td>";
                     } else {
-                        // Обычная ячейка (число или строка)
                         echo "<td>" . htmlspecialchars($cell) . "</td>";
                     }
                 }
@@ -179,27 +160,19 @@ class TableFunction {
             echo "<p>Нет данных для отображения.</p>";
         }
     }
-
     // Публичная функция для проверки, является ли строка JSON
     public function is_json($string) {
-        // Проверяем, является ли строка не пустой и начинается с '{' или '['
-        if (!is_string($string) || empty($string) || !($string[0] === '{' || $string[0] === '[')) {
-            return false;
-        }
-        json_decode($string);
-        return (json_last_error() === JSON_ERROR_NONE);
+        return is_string($string) && !empty($string) && ($string[0] === '{' || $string[0] === '[') && json_last_error() === JSON_ERROR_NONE;
     }
-   
+
     public function universalSort(string $sortField, string $order): array {
-        // Формируем SQL-запрос
-        
         $query = "SELECT * FROM `$this->tableName` ORDER BY `$sortField` $order";
         $file = 'debug.txt';
         $data = "$query, $sortField, $order";
         file_put_contents($file, $data);
        
         // Выполняем запрос
-       return $this->executeQuery($query);
+        return $this->executeQuery($query);
     }
 }
 // Подключение к базе данных
@@ -576,7 +549,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
                 $hasError = true; // Устанавливаем флаг ошибки
             }
         }
-
+        if (!$hasError && $fileData !== null && strlen($fileData) > 55 * 1024) {
+            $fileData = compressImage($fileData); // Сжимаем изображение
+        }
         // Проверка загрузки файла (необязательное поле)
         $fileData = null;
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
@@ -808,7 +783,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         file_put_contents('debug.txt', print_r($file, true));
 
         // Проверка размера файла
-        if ($file['size'] > 10 * 1024 * 1024) {
+        if ($file['size'] > 2 * 1024 * 1024) {
             $message = "Размер файла не должен превышать 10 МБ.";
             $messageType = "error";
             $hasError = true; // Устанавливаем флаг ошибки
@@ -840,6 +815,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         }
     }
 
+    // Если ошибок нет, выполняем сжатие изображения, если оно больше 55 КБ
+    if (!$hasError && $fileData !== null && strlen($fileData) > 55 * 1024) {
+        $fileData = compressImage($fileData); // Сжимаем изображение
+    }
+
     // Если ошибок нет, выполняем SQL-запрос для обновления изображения
     if (!$hasError) {
         $stmt = $db->prepare("UPDATE auto_parts SET photo = ? WHERE id = ?");
@@ -848,7 +828,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         if ($stmt->execute()) {
             $login = $_SESSION['login'];
             $id_user = $_SESSION['user_id'];
-            $type_role= $_SESSION['type_role'];
+            $type_role = $_SESSION['type_role'];
             // Логируем действие
             $Actstr = "Пользователь $login типа '$type_role' изменил изображение для запчасти id=$partId";
             $dbExecutor->insertAction($id_user, $Actstr);
@@ -862,6 +842,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
 
         $stmt->close();
     }
+}
+
+// Функция для сжатия изображения до 50 КБ
+function compressImage($imageData) {
+    $image = imagecreatefromstring($imageData);
+    if (!$image) {
+        return $imageData; // Если не удалось создать изображение, возвращаем оригинал
+    }
+
+    // Начальное значение качества
+    $quality = 75; 
+    $compressedImageData = null;
+
+    // Сжимаем изображение, пока его размер не станет меньше 50 КБ
+    do {
+        ob_start(); // Начинаем буферизацию вывода
+        imagejpeg($image, null, $quality); // Сохраняем изображение в буфер с заданным качеством
+        $compressedImageData = ob_get_contents(); // Получаем содержимое буфера
+        ob_end_clean(); // Очищаем буфер
+
+        // Уменьшаем качество
+        $quality -= 5;
+    } while (strlen($compressedImageData) > 75 * 1024 && $quality > 0); // Проверяем размер и качество
+
+    imagedestroy($image); // Освобождаем память
+    return $compressedImageData; // Возвращаем сжатое изображение
 }
 
 //поиск автозапчастей

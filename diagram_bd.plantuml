@@ -1,0 +1,168 @@
+@startuml
+
+entity "users" {
+  +id : int <<PK>>
+  +login : VARCHAR(20)
+  +password : VARCHAR(50)
+  +type_role : int
+}
+
+entity "staff" {
+  +id : int <<PK>>
+  +first_name : VARCHAR(45)
+  +second_name : VARCHAR(45)
+  +login : VARCHAR(20)
+  +email : VARCHAR(30)
+  +contact_phone : VARCHAR(45)
+  +idpost : int <<FK>>
+}
+
+entity "garage" {
+  +id : int <<PK>>
+  +type_of_work : VARCHAR(70)
+}
+
+entity "inventory" {
+  +id : int <<PK>>
+  +name_inventory : VARCHAR(70)
+  +type_inventory : VARCHAR(45)
+  +idgarage : int <<FK>>
+}
+
+entity "car_brands" {
+  +id : int <<PK>>
+  +name_brand : VARCHAR(45)
+}
+
+entity "garage_car_brands" {
+  +idgarage : int <<FK>>
+  +idcar_brands : int <<FK>>
+}
+
+entity "suppliers" {
+  +id : int <<PK>>
+  +name_organization : VARCHAR(70)
+  +email : VARCHAR(70)
+  +contact_phone : VARCHAR(45)
+  +contact_person : VARCHAR(45)
+  +address : VARCHAR(45)
+}
+
+entity "cars" {
+  +id : int <<PK>>
+  +brand : VARCHAR(45)
+  +model : VARCHAR(45)
+  +year_production : YEAR(4)
+  +VIN_number : VARCHAR(17)
+  +purchase_price : VARCHAR(45)
+  +condition : JSON
+  +idgarage : int <<FK>>
+  +idsupplier : int <<FK>>
+}
+
+entity "history_operations_with_car" {
+  +id : int <<PK>>
+  +type_operation_car : VARCHAR(45)
+  +description : JSON
+  +datetime : TIMESTAMP
+  +idcar : int <<FK>>
+}
+
+entity "staff_history_operations_with_car" {
+  +idstaff : int <<FK>>
+  +idoperation_car : int <<FK>>
+}
+
+entity "auto_parts" {
+  +id : int <<PK>>
+  +name_parts : VARCHAR(45)
+  +article : VARCHAR(45)
+  +condition : VARCHAR(45)
+  +purchase_price : VARCHAR(45)
+  +description : JSON
+  +idcar : int <<FK>>
+  +idgarage : int <<FK>>
+}
+
+entity "history_operations_with_autoparts" {
+  +id : int <<PK>>
+  +type_operation_parts : VARCHAR(45)
+  +description : JSON
+  +datetime : TIMESTAMP
+  +idautoparts : int <<FK>>
+  +idstaff : int <<FK>>
+}
+
+entity "customers" {
+  +id : int <<PK>>
+  +login : VARCHAR(20)
+  +first_name : VARCHAR(45)
+  +second_name : VARCHAR(45)
+  +email : VARCHAR(30)
+  +contact_phone : VARCHAR(45)
+  +address : VARCHAR(50)
+}
+
+entity "orders" {
+  +id : int <<PK>>
+  +type_order : ENUM('Самовывоз', 'Доставка')
+  +status : ENUM('Ожидается подтверждение', 'Отправка со склада', 'В пути', 'Готов к получению', 'Отменён')
+  +datetime : TIMESTAMP
+  +purchase_price : VARCHAR(45)
+  +idcustomer : int <<FK>>
+}
+
+entity "orders_auto_parts" {
+  +idorder : int <<FK>>
+  +idautoparts : int <<FK>>
+}
+
+entity "cart" {
+  +id : int <<PK>>
+  +idcustomer : int <<FK>>
+  +type_order : ENUM('Самовывоз', 'Доставка')
+}
+
+entity "cart_auto_parts" {
+  +idcart : int <<FK>>
+  +idautoparts : int <<FK>>
+}
+
+entity "sys_activity_log" {
+  +id : int <<PK>>
+  +actor_id : int <<FK>>
+  +action_datetime : datetime
+  +action : text
+}
+
+entity "departments" {
+  +id : int <<PK>>
+  +name_department : VARCHAR(70)
+}
+
+entity "posts" {
+  +id : int <<PK>>
+  +name_post : VARCHAR(70)
+  +iddepartment : int <<FK>>
+}
+
+' Relationships
+users ||--o{ staff : manages
+staff ||--o{ staff_garage : works_in
+garage ||--o{ staff_garage : has
+garage ||--o{ inventory : contains
+cars ||--o{ inventory : has
+suppliers ||--o{ cars : supplies
+garage ||--o{ cars : contains
+history_operations_with_car ||--o{ cars : logs
+history_operations_with_car ||--o{ staff_history_operations_with_car : involves
+auto_parts ||--o{ cars : belongs_to
+history_operations_with_autoparts ||--o{ auto_parts : logs
+customers ||--o{ orders : places
+orders ||--o{ orders_auto_parts : contains
+cart ||--o{ cart_auto_parts : has
+departments ||--o{ posts : contains
+garage_car_brands ||--o{ car_brands : includes
+garage_car_brands ||--o{ garage : has
+
+@enduml
