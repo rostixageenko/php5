@@ -1,13 +1,31 @@
 @startuml
 
-entity "users" {
+' Установка параметров для уменьшения пустого пространства
+skinparam entity {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+}
+skinparam rectangle {
+    BackgroundColor LightCoral
+    BorderColor DarkRed
+}
+skinparam layout {
+    HorizontalSpacing 50
+    VerticalSpacing 20
+}
+
+' Установка направления компоновки
+top to bottom direction
+
+' Сущности
+entity "users" as u {
   +id : int <<PK>>
   +login : VARCHAR(20)
   +password : VARCHAR(50)
   +type_role : int
 }
 
-entity "staff" {
+entity "staff" as s {
   +id : int <<PK>>
   +first_name : VARCHAR(45)
   +second_name : VARCHAR(45)
@@ -17,29 +35,61 @@ entity "staff" {
   +idpost : int <<FK>>
 }
 
-entity "garage" {
+entity "customers" as cu {
+  +id : int <<PK>>
+  +login : VARCHAR(20)
+  +first_name : VARCHAR(45)
+  +second_name : VARCHAR(45)
+  +email : VARCHAR(30)
+  +contact_phone : VARCHAR(45)
+  +address : VARCHAR(50)
+}
+
+entity "departments" as d {
+  +id : int <<PK>>
+  +name_department : VARCHAR(70)
+}
+
+entity "posts" as p {
+  +id : int <<PK>>
+  +name_post : VARCHAR(70)
+  +iddepartment : int <<FK>>
+}
+
+entity "orders" as o {
+  +id : int <<PK>>
+  +type_order : ENUM('Самовывоз', 'Доставка')
+  +status : ENUM('Ожидается подтверждение', 'Отправка со склада', 'В пути', 'Готов к получению', 'Отменён')
+  +datetime : TIMESTAMP
+  +purchase_price : VARCHAR(45)
+  +idcustomer : int <<FK>>
+}
+
+
+' Сущности ниже
+entity "garage" as g {
   +id : int <<PK>>
   +type_of_work : VARCHAR(70)
 }
 
-entity "inventory" {
+entity "inventory" as i {
   +id : int <<PK>>
   +name_inventory : VARCHAR(70)
   +type_inventory : VARCHAR(45)
   +idgarage : int <<FK>>
 }
 
-entity "car_brands" {
+entity "car_brands" as cb {
   +id : int <<PK>>
   +name_brand : VARCHAR(45)
 }
 
-entity "garage_car_brands" {
+entity "garage_car_brands" as gcb {
   +idgarage : int <<FK>>
   +idcar_brands : int <<FK>>
 }
 
-entity "suppliers" {
+entity "suppliers" as sp {
   +id : int <<PK>>
   +name_organization : VARCHAR(70)
   +email : VARCHAR(70)
@@ -48,7 +98,7 @@ entity "suppliers" {
   +address : VARCHAR(45)
 }
 
-entity "cars" {
+entity "cars" as c {
   +id : int <<PK>>
   +brand : VARCHAR(45)
   +model : VARCHAR(45)
@@ -60,7 +110,7 @@ entity "cars" {
   +idsupplier : int <<FK>>
 }
 
-entity "history_operations_with_car" {
+entity "history_operations_with_car" as hoc {
   +id : int <<PK>>
   +type_operation_car : VARCHAR(45)
   +description : JSON
@@ -68,12 +118,7 @@ entity "history_operations_with_car" {
   +idcar : int <<FK>>
 }
 
-entity "staff_history_operations_with_car" {
-  +idstaff : int <<FK>>
-  +idoperation_car : int <<FK>>
-}
-
-entity "auto_parts" {
+entity "auto_parts" as ap {
   +id : int <<PK>>
   +name_parts : VARCHAR(45)
   +article : VARCHAR(45)
@@ -84,85 +129,38 @@ entity "auto_parts" {
   +idgarage : int <<FK>>
 }
 
-entity "history_operations_with_autoparts" {
-  +id : int <<PK>>
-  +type_operation_parts : VARCHAR(45)
-  +description : JSON
-  +datetime : TIMESTAMP
-  +idautoparts : int <<FK>>
-  +idstaff : int <<FK>>
-}
-
-entity "customers" {
-  +id : int <<PK>>
-  +login : VARCHAR(20)
-  +first_name : VARCHAR(45)
-  +second_name : VARCHAR(45)
-  +email : VARCHAR(30)
-  +contact_phone : VARCHAR(45)
-  +address : VARCHAR(50)
-}
-
-entity "orders" {
-  +id : int <<PK>>
-  +type_order : ENUM('Самовывоз', 'Доставка')
-  +status : ENUM('Ожидается подтверждение', 'Отправка со склада', 'В пути', 'Готов к получению', 'Отменён')
-  +datetime : TIMESTAMP
-  +purchase_price : VARCHAR(45)
-  +idcustomer : int <<FK>>
-}
-
-entity "orders_auto_parts" {
-  +idorder : int <<FK>>
-  +idautoparts : int <<FK>>
-}
-
-entity "cart" {
+' Новые сущности
+entity "cart" as ct {
   +id : int <<PK>>
   +idcustomer : int <<FK>>
   +type_order : ENUM('Самовывоз', 'Доставка')
 }
 
-entity "cart_auto_parts" {
+entity "cart_auto_parts" as cap {
   +idcart : int <<FK>>
   +idautoparts : int <<FK>>
 }
 
-entity "sys_activity_log" {
-  +id : int <<PK>>
-  +actor_id : int <<FK>>
-  +action_datetime : datetime
-  +action : text
-}
+' Связи
+s ||--o{ g : "работает в"
+g ||--o{ i : "содержит"
+g ||--o{ c : "содержит"
+cb ||--o{ gcb : "включает"
+g ||--o{ gcb : "содержит"
+sp ||--o{ c : "поставляет"
+c ||--o{ hoc : "логирует"
+cu ||--o{ o : "размещает"
+o ||--o{ ap : "содержит"
 
-entity "departments" {
-  +id : int <<PK>>
-  +name_department : VARCHAR(70)
-}
+' Новые связи
+c ||--o{ ap : "имеет"
+cu ||--o{ d : "принадлежит"
 
-entity "posts" {
-  +id : int <<PK>>
-  +name_post : VARCHAR(70)
-  +iddepartment : int <<FK>>
-}
+' Связи для новых сущностей
+cu ||--o{ ct : "размещает"
+ct ||--o{ cap : "содержит"
+ap ||--o{ cap : "включает"
 
-' Relationships
-users ||--o{ staff : manages
-staff ||--o{ staff_garage : works_in
-garage ||--o{ staff_garage : has
-garage ||--o{ inventory : contains
-cars ||--o{ inventory : has
-suppliers ||--o{ cars : supplies
-garage ||--o{ cars : contains
-history_operations_with_car ||--o{ cars : logs
-history_operations_with_car ||--o{ staff_history_operations_with_car : involves
-auto_parts ||--o{ cars : belongs_to
-history_operations_with_autoparts ||--o{ auto_parts : logs
-customers ||--o{ orders : places
-orders ||--o{ orders_auto_parts : contains
-cart ||--o{ cart_auto_parts : has
-departments ||--o{ posts : contains
-garage_car_brands ||--o{ car_brands : includes
-garage_car_brands ||--o{ garage : has
+d ||--o{ p : "содержит"
 
 @enduml

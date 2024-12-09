@@ -56,7 +56,18 @@ include('table_func.php'); // Подключаем файл с функциям�
             cursor: pointer; /* Указатель при наведении */
             width: 100%; /* Кнопка занимает всю ширину */
         }
-        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
         .modal-content { 
             background-color: #fefefe; 
             margin: 15% auto; 
@@ -64,6 +75,7 @@ include('table_func.php'); // Подключаем файл с функциям�
             border: 1px solid #888; 
             width: 50%; /* Уменьшенная ширина модального окна */
             max-width: 400px; /* Максимальная ширина для больших экранов */
+            border-radius: 10px; /* Округлые углы */
         }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
         .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
@@ -102,7 +114,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
-                <button id="openModal" class="custom-button">Выгрузить базу данных</button> 
+                <button id="openModal" class="custom-button">Выгрузить таблицу</button> 
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
