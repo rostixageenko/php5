@@ -89,11 +89,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql_query'])) {
             border: none;
             border-radius: 5px;
             cursor: pointer; /* Указатель при наведении */
-            margin-top: 10px; /* Отступ сверху для кнопки */
+            margin-top: 0px; /* Отступ сверху для кнопки */
             width: 100%; /* Кнопка занимает всю ширину */
         }
         tr:nth-child(even) {
             background-color: #f9f9f9; /* Чередующиеся цвета строк */
+        }
+        
+        /* Стили для всплывающего окна изображения */
+        .modal {
+            display: none; /* Скрыто по умолчанию */
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* Полупрозрачный фон */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal img {
+            max-width: 90%; /* Максимальная ширина изображения */
+            max-height: 90%; /* Максимальная высота изображения */
         }
     </style>
 </head>
@@ -118,30 +136,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql_query'])) {
         <form method="POST">
             <textarea name="sql_query" placeholder="Введите ваш SQL-запрос здесь..."></textarea>
             <button type="submit" class="btn">Выполнить запрос</button> <!-- Кнопка под полем -->
+            <button class="btn" id="showImage">Вывести схему базы данных </button> <!-- Кнопка для вывода схемы базы данных -->
         </form>
     </div>
+    
     <?php if (!empty($results)): ?>
-            <div class="table-container">
-                <table>
-                    <thead>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <?php foreach ($results[0] as $key => $value): ?>
+                            <th><?php echo htmlspecialchars($key); ?></th>
+                        <?php endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($results as $row): ?>
                         <tr>
-                            <?php foreach ($results[0] as $key => $value): ?>
-                                <th><?php echo htmlspecialchars($key); ?></th>
+                            <?php foreach ($row as $value): ?>
+                                <td><?php echo htmlspecialchars($value); ?></td>
                             <?php endforeach; ?>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($results as $row): ?>
-                            <tr>
-                                <?php foreach ($row as $value): ?>
-                                    <td><?php echo htmlspecialchars($value); ?></td>
-                                <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 </main>
+
+<!-- Всплывающее окно для изображения -->
+<div class="modal" id="imageModal">
+    <img src="image/diagram_bd.png" alt="Схема базы данных" id="modalImage">
+</div>
+
+<script>
+    const showImageButton = document.getElementById('showImage');
+    const modal = document.getElementById('imageModal');
+
+    showImageButton.addEventListener('click', function(event) {
+        event.preventDefault(); // Предотвращаем переход по ссылке
+        modal.style.display = 'flex'; // Показываем модальное окно
+    });
+
+    modal.addEventListener('click', function() {
+        modal.style.display = 'none'; // Закрываем модальное окно при клике
+    });
+</script>
+
 </body>
 </html>
