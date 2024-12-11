@@ -8,6 +8,7 @@ $dbname = 'auto_disassembly_station'; // Имя базы данных
 // Соединение с базой данных
 $conn = new mysqli($host, $user, $password, $dbname);
 
+
 // Проверка соединения
 if ($conn->connect_error) {
     die("Ошибка подключения: " . $conn->connect_error);
@@ -39,14 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
     $data = [];
 
     while ($row = $result->fetch_assoc()) {
-        // Проверка наличия данных в поле photo
-        if (isset($row['photo'])) {
-            // Преобразование BLOB в Base64
-            $row['photo'] = base64_encode($row['photo']);
-            // Добавление метаданных о типе изображения, если необходимо
-            $row['photo'] = 'data:image/jpeg;base64,' . $row['photo']; // Замените 'image/jpeg' на нужный тип
-        } else {
-            $row['photo'] = null; // Если данных нет
+     // Проверка наличия данных в поле photo
+        if($tableName==="auto_parts"){
+            if (isset($row['photo'])) {
+                // Преобразование BLOB в Base64
+                $row['photo'] = base64_encode($row['photo']);
+                // Добавление метаданных о типе изображения, если необходимо
+                $row['photo'] = 'data:image/jpeg;base64,' . $row['photo']; // Замените 'image/jpeg' на нужный тип
+            } else {
+                $row['photo'] = null; // Если данных нет
+            }
         }
         $data[] = $row;
     }

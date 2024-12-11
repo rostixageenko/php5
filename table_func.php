@@ -166,11 +166,7 @@ class TableFunction {
     }
 
     public function universalSort(string $sortField, string $order): array {
-        $query = "SELECT * FROM `$this->tableName` ORDER BY `$sortField` $order";
-        $file = 'debug.txt';
-        $data = "$query, $sortField, $order";
-        file_put_contents($file, $data);
-       
+        $query = "SELECT * FROM `$this->tableName` ORDER BY `$sortField` $order";       
         // Выполняем запрос
         return $this->executeQuery($query);
     }

@@ -1,1 +1,1 @@
-Это пример строки для записи в файл.
+SELECT * FROM `auto_parts` ORDER BY `id` ASC, id, ASC

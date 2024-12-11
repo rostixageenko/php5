@@ -1,9 +1,48 @@
 <?php
 include('table_func.php'); // Подключаем файл с функциями и классами
+
+$message = "";
+$messageType = "success"; // По умолчанию тип сообщения
+
+// Проверка, была ли загружена форма
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
+    $fileContent = file_get_contents($_FILES['json_file']['tmp_name']);
+    $data = json_decode($fileContent, true); // Декодируем JSON
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $message = 'Ошибка при декодировании JSON: ' . json_last_error_msg();
+        $messageType = "error"; // Ошибка
+    } else {
+        $table = $_POST['table']; // Имя таблицы
+        $success = true; // Переменная для отслеживания успеха операций
+
+        foreach ($data as $row) {
+            // Подготовка запроса для добавления данных
+            $columns = implode(", ", array_keys($row));
+            $placeholders = implode(", ", array_fill(0, count($row), '?'));
+            $stmt = $db->prepare("INSERT INTO `$table` ($columns) VALUES ($placeholders)");
+
+            // Привязка параметров
+            $types = str_repeat('s', count($row)); // Предполагается, что все значения строковые
+            $stmt->bind_param($types, ...array_values($row)); // Привязка значений
+
+            if (!$stmt->execute()) {
+                $message = "Ошибка: " . $stmt->error;
+                $messageType = "error"; // Ошибка
+                $success = false; // Установить статус неуспеха
+                break; // Прерывание цикла, если произошла ошибка
+            }
+        }
+
+        if ($success) {
+            $message = "Данные успешно загружены.";
+            $messageType = "success";
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
-<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -79,25 +118,70 @@ include('table_func.php'); // Подключаем файл с функциям�
         }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
         .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
+
+        .close-upload{
+         color: #aaa; float: right; font-size: 28px; font-weight: bold; 
+        }
+        .close-upload:hover, .close-upload:focus { color: black; text-decoration: none; cursor: pointer; }
+
+        .file-upload {
+            display: flex;
+            align-items: center; /* Выравнивание по центру */
+            margin-bottom: 15px; /* Отступ между полями */
+        }
+
+        input[type="file"] {
+            height: 25px;
+            width: 358px;
+         /* margin-left: 10px; Отступ между текстом и полем загрузки */
+        }
     </style>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById('openModal').onclick = function() {
-                document.getElementById('myModal').style.display = 'block';
-            }
+   document.addEventListener("DOMContentLoaded", function() {
+        // Закрытие модального окна при клике вне
+        window.onclick = function(event) {
+        const modal = document.getElementById('myModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
 
-            document.querySelector('.close').onclick = function() {
-                document.getElementById('myModal').style.display = 'none';
-            }
+    // Открытие модального окна для выгрузки
+    document.getElementById('openModal').onclick = function() {
+        document.getElementById('myModal').style.display = 'block';
+    }
 
-            window.onclick = function(event) {
-                const modal = document.getElementById('myModal');
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
+    // Закрытие модального окна для выгрузки
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    // Открытие модального окна для загрузки
+    document.getElementById('openUploadModal').onclick = function() {
+        document.getElementById('uploadModal').style.display = 'block';
+    }
+
+    // Закрытие модального окна для загрузки
+    document.querySelector('.close-upload').onclick = function() {
+        document.getElementById('uploadModal').style.display = 'none';
+    }
+    window.onclick = function(event) {
+        const modal = document.getElementById('uploadModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+    // Закрытие модального окна при клике на крестик
+    document.querySelectorAll('.close').forEach(function(closeButton) {
+        closeButton.onclick = function() {
+            const modal = closeButton.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
             }
-        });
-    </script>
+        }
+    });
+});
+</script>
 </head>
 <body>
 <header>
@@ -114,7 +198,8 @@ include('table_func.php'); // Подключаем файл с функциям�
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
-                <button id="openModal" class="custom-button">Выгрузить таблицу</button> 
+                <button id="openModal" class="custom-button">Выгрузить таблицу</button>
+                <button id="openUploadModal" class="custom-button">Загрузить таблицу</button> <!-- Новая кнопка -->
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
@@ -124,7 +209,7 @@ include('table_func.php'); // Подключаем файл с функциям�
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
 
-<!-- Модальное окно -->
+<!-- Модальное окно для выгрузки -->
 <div id="myModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
@@ -157,10 +242,44 @@ include('table_func.php'); // Подключаем файл с функциям�
     </div>
 </div>
 
+<!-- Модальное окно для загрузки -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <span class="close-upload">&times;</span>
+        <h2>Загрузка из JSON</h2>
+        <form id="uploadForm" method="POST" action="admin_interface_main.php" enctype="multipart/form-data">
+            <label for="tableUpload">Выберите таблицу:</label>
+            <select id="tableUpload" name="table" required>
+                <option value="auto_parts">auto_parts</option>
+                <option value="cars">cars</option>
+                <option value="cart">cart</option>
+                <option value="cart_auto_parts">cart_auto_parts</option>
+                <option value="car_brands">car_brands</option>
+                <option value="customers">customers</option>
+                <option value="departments">departments</option>
+                <option value="garage">garage</option>
+                <option value="garage_car_brands">garage_car_brands</option>
+                <option value="history_operations_with_autoparts">history_operations_with_autoparts</option>
+                <option value="history_operations_with_car">history_operations_with_car</option>
+                <option value="inventory">inventory</option>
+                <option value="orders">orders</option>
+                <option value="posts">posts</option>
+                <option value="staff">staff</option>
+                <option value="staff_garage">staff_garage</option>
+                <option value="suppliers">suppliers</option>
+                <option value="sys_activity_log">sys_activity_log</option>
+                <option value="users">users</option>
+            </select>
+            <label for="jsonFile">Выберите файл JSON:</label>
+            <input type="file" id="jsonFile" name="json_file" accept=".json" required>
+            <button type="submit" class="custom-btn">Загрузить</button>
+        </form>
+    </div>
+</div>
 </body>
-</html>
 
 <main>
+    <!-- сортировка -->
     <div class="container">
         <div class="form-container">
         <h2>Сортировка данных</h2>
@@ -178,7 +297,7 @@ include('table_func.php'); // Подключаем файл с функциям�
                 break;
                 case "auto_parts":
                 echo "<option value='id'>ID</option>";
-                echo "<option value='name_part'>Название запчасти</option>";
+                echo "<option value='name_parts'>Название запчасти</option>";
                 echo "<option value='article'>Артикул</option>";
                 echo "<option value='purchase_price'>Цена</option>";
                 break;
@@ -357,6 +476,100 @@ include('table_func.php'); // Подключаем файл с функциям�
                     </div>
                     <button type="submit" class="btn" name="update_image">Изменить картинку</button>
                 </form>
+                id, name_inventory, , idgarage, identifier
+                <?php elseif ($selectedTable === 'orders'): ?>
+                <h2>Поиск запчастей</h2>
+                <form method="POST" action="?table=orders&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_order_id" placeholder="ID заказа (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_type_order" placeholder="Тип заказа (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_status" placeholder="гпзапгтн спмьи (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_type_inventory" placeholder="ID автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_identifier" placeholder="ID гаража (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
+                </form>
+                <h2>Добавить запчасть</h2>
+                <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="part_name" placeholder="Название запчасти" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="article" placeholder="Артикул" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="condition" placeholder="Состояние" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="price" placeholder="Цена" required>
+                    </div>
+                    <div class="input-group">
+                        <textarea name="description" placeholder="Описание" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="car_id" placeholder="ID автомобиля" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="garage_id" placeholder="ID гаража" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Добавить изображение</label>
+                        <div class="upload-photo" onclick="document.getElementById('file-input').click();">
+                            <span class="upload-icon">+</span>
+                            <input type="file" id="file-input" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" name="add_part">Добавить запчасть</button>
+                </form>
+
+                <h2>Изменить запчасть</h2>
+                <form method="POST" action="?table=auto_parts&action=update_part">
+                    <div class="input-group">
+                        <select name="search_field" required class="custom-select" id="mySelect" onchange="changeColor(this)">
+                            <option value="" disabled selected style="color: gray;">Выберите поле для поиска</option>
+                            <option value="id">ID запчасти</option>
+                            <option value="article">Артикул</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_value" placeholder="Введите значение для поиска" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="new_part_name" placeholder="Новое название (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="new_article" placeholder="Новый артикул (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="new_condition" placeholder="Новое состояние (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="new_price" placeholder="Новая цена (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <textarea name="new_description" placeholder="Новое описание (необязательно)"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="new_car_id" placeholder="ID автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="new_garage_id" placeholder="ID гаража (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="update_part">Изменить запчасть</button>
+                </form>
+    
             <?php else: ?>
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
             <?php endif; ?>
@@ -403,10 +616,6 @@ include('table_func.php'); // Подключаем файл с функциям�
                     case 'suppliers':
                         $suppliers = $suppliersTable->fetchLimited($rowCount);
                         $suppliersTable->renderTable($suppliers, 'Поставщики');
-                        break;
-                    case 'inventory':
-                        $inventory = $inventoryTable->fetchLimited($rowCount);
-                        $inventoryTable->renderTable($inventory, 'Инвентарь');
                         break;
                     case 'cars':
                         $cars = $carsTable->fetchLimited($rowCount);
