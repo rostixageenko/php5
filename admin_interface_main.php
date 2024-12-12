@@ -32,6 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
         }
 
         if ($success) {
+            $login = $_SESSION['login'];
+        $id_user = $_SESSION['user_id'];
+        $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role'  загрузил таблицу $table.";
+            $dbExecutor->insertAction($id_user, $actStr);    
             $message = "Данные успешно загружены.";
             $messageType = "success";
         }
@@ -117,24 +122,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
         }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
         .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
+
+        .close-upload{
+         color: #aaa; float: right; font-size: 28px; font-weight: bold; 
+        }
+        .close-upload:hover, .close-upload:focus { color: black; text-decoration: none; cursor: pointer; }
+
+        .file-upload {
+            display: flex;
+            align-items: center; /* Выравнивание по центру */
+            margin-bottom: 15px; /* Отступ между полями */
+        }
+
+        input[type="file"] {
+            height: 25px;
+            width: 358px;
+         /* margin-left: 10px; Отступ между текстом и полем загрузки */
+        }
+        .garage-input {
+            display: none; /* Скрываем поле по умолчанию */
+        }
     </style>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById('openModal').onclick = function() {
-                document.getElementById('myModal').style.display = 'block';
-            }
+       document.addEventListener("DOMContentLoaded", function() {
+        // Закрытие модального окна при клике вне
+        window.onclick = function(event) {
+        const modal = document.getElementById('myModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
 
-            document.querySelector('.close').onclick = function() {
-                document.getElementById('myModal').style.display = 'none';
-            }
+    // Открытие модального окна для выгрузки
+    document.getElementById('openModal').onclick = function() {
+        document.getElementById('myModal').style.display = 'block';
+    }
 
-            window.onclick = function(event) {
-                const modal = document.getElementById('myModal');
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
+    // Закрытие модального окна для выгрузки
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    // Открытие модального окна для загрузки
+    document.getElementById('openUploadModal').onclick = function() {
+        document.getElementById('uploadModal').style.display = 'block';
+    }
+
+    // Закрытие модального окна для загрузки
+    document.querySelector('.close-upload').onclick = function() {
+        document.getElementById('uploadModal').style.display = 'none';
+    }
+    window.onclick = function(event) {
+        const modal = document.getElementById('uploadModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+    // Закрытие модального окна при клике на крестик
+    document.querySelectorAll('.close').forEach(function(closeButton) {
+        closeButton.onclick = function() {
+            const modal = closeButton.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
             }
-        });
+        }
+    });
+});
+function toggleGarageInput(selectElement) {
+    const garageInput = document.querySelector('.garage-input');
+    if (selectElement.value === "2") { // Если выбран "Сотрудник"
+        garageInput.style.display = 'block'; // Показываем поле
+    } else {
+        garageInput.style.display = 'none'; // Скрываем поле
+    }
+}
+function addPart() {
+    const partsContainer = document.getElementById('parts-container');
+    const newPartInput = document.createElement('div');
+    newPartInput.className = 'input-group part-input';
+    newPartInput.style.display = 'flex'; // Устанавливаем флекс для нового поля
+    newPartInput.innerHTML = `
+        <input type="text" name="parts[]" placeholder="ID автозапчасти" required>
+        <button type="button" class="remove-part" onclick="removePart(this)" style="margin-left: 10px;">❌</button>
+    `;
+    partsContainer.appendChild(newPartInput);
+}
+
+function removePart(button) {
+    const partInput = button.parentElement;
+    partInput.remove();
+}
+function changeColor(select) {
+    if (select.value) {
+        select.style.color = 'black'; // Меняем цвет текста на черный при выборе
+    } else {
+        select.style.color = 'gray'; // Сбрасываем цвет текста на серый
+    }
+};
     </script>
 </head>
 <body>
@@ -147,10 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <a href="?table=users">Пользователи</a>
                 <a href="?table=auto_parts">Запчасти</a>
                 <a href="?table=orders">Заказы</a>
-                <a href="?table=customers">Покупатели</a>
+                <a href="?table=customers">Покупатели</a name_organization, email, contact_phone, contact_person, addressa>
                 <a href="?table=staff">Сотрудники</a>
                 <a href="?table=suppliers">Поставщики</a>
-                <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
                 <button id="openModal" class="custom-button">Выгрузить таблицу</button> 
                 <button id="openUploadModal" class="custom-button">Загрузить таблицу</button> 
@@ -245,16 +328,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
             // Получаем названия полей для сортировки
             switch ($selectedTable) {
                 case "users": 
-                echo "<option value='id'>ID</option>";
-                echo "<option value='login'>Логин</option>";
-                echo "<option value='type_role'>Тип роли</option>";
-                break;
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='login'>Логин</option>";
+                    echo "<option value='type_role'>Тип роли</option>";
+                    break;
+                    
                 case "auto_parts":
-                echo "<option value='id'>ID</option>";
-                echo "<option value='name_part'>Название запчасти</option>";
-                echo "<option value='article'>Артикул</option>";
-                echo "<option value='purchase_price'>Цена</option>";
-                break;
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='name_part'>Название запчасти</option>";
+                    echo "<option value='article'>Артикул</option>";
+                    echo "<option value='purchase_price'>Цена</option>";
+                    break;
+            
+                case "orders":
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='type_order'>Тип заказа</option>";
+                    echo "<option value='status'>Статус</option>";
+                    echo "<option value='datetime'>Дата и время</option>";
+                    echo "<option value='purchase_price'>Цена</option>";
+                    echo "<option value='idcustomer'>ID клиента</option>";
+                    break;
+                    
+                case "customers":
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='login'>Логин</option>";
+                    echo "<option value='first_name'>Имя</option>";
+                    echo "<option value='second_name'>Фамилия</option>";
+                    echo "<option value='email'>Email</option>";
+                    echo "<option value='contact_phone'>Телефон</option>";
+                    echo "<option value='address'>Адрес</option>";
+                    break;
+            
+                case "staff":
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='first_name'>Имя</option>";
+                    echo "<option value='second_name'>Фамилия</option>";
+                    echo "<option value='login'>Логин</option>";
+                    echo "<option value='email'>Email</option>";
+                    echo "<option value='contact_phone'>Телефон</option>";
+                    echo "<option value='idpost'>ID должности</option>";
+                    break;
+            
+                case "suppliers":
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='name_organization'>Название организации</option>";
+                    echo "<option value='email'>Email</option>";
+                    echo "<option value='contact_phone'>Телефон</option>";
+                    echo "<option value='contact_person'>Контактное лицо</option>";
+                    echo "<option value='address'>Адрес</option>";
+                    break;
+            
+                case "cars":
+                    echo "<option value='id'>ID</option>";
+                    echo "<option value='brand'>Марка</option>";
+                    echo "<option value='model'>Модель</option>";
+                    echo "<option value='year_production'>Год производства</option>";
+                    echo "<option value='VIN_number'>VIN номер</option>";
+                    echo "<option value='purchase_price'>Цена</option>";
+                    echo "<option value='condition'>Состояние</option>";
+                    echo "<option value='idgarage'>ID гаража</option>";
+                    echo "<option value='idsupplier'>ID поставщика</option>";
+                    echo "<option value='mileage'>Пробег</option>";
+                    echo "<option value='date_receipt'>Дата получения</option>";
+                    echo "<option value='engine_volume'>Объем двигателя</option>";
+                    echo "<option value='fuel_type'>Тип топлива</option>";
+                    echo "<option value='transmission_type'>Тип трансмиссии</option>";
+                    echo "<option value='body_type'>Тип кузова</option>";
+                    break;
             }
             // Добавьте другие таблицы при необходимости
             ?>
@@ -301,16 +441,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-                        <select name="type_role" required onchange="toggleGarageInput(this);changeColor(this)" class="custom-select">
-                            <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
-                            <option value="0">Покупатель</option>
-                            <option value="1">Администратор</option>
-                            <option value="2">Сотрудник</option>
-                        </select>
-                    </div>
-                    <div class="input-group garage-input" style="display: none;">
-                        <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
-                    </div>
+    <select name="type_role" required onchange="toggleGarageInput(this)" class="custom-select">
+        <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
+        <option value="0">Покупатель</option>
+        <option value="1">Администратор</option>
+        <option value="2">Сотрудник</option>
+    </select>
+</div>
+<div class="input-group garage-input">
+    <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
+</div>
                     <button type="submit" name="add_users" class="btn">Добавить</button>
                 </form>
                     <!-- Изменить пароль пользователя -->
@@ -470,22 +610,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     <div class="input-group">
                         <input type="text" name="search_id_customer" placeholder="ID покупателя (необязательно)">
                     </div>
-                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
+                    <button type="submit" class="btn" name="search_order">Поиск заказ</button>
                 </form>
 
                 <!-- добавление заказа -->
                 <h2>Добавить заказ</h2>
                 <form method="POST" action="?table=orders" enctype="multipart/form-data">
-                    
                     <div class="input-group">
-                        <select name="type_order" class="custom-select" required onchange="changeColor(this)">
+                        <select name="type_order" class="custom-select" required  onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Тип заказа</option>
                             <option value="Самовывоз">Самовывоз</option>
                             <option value="Доставка">Доставка</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <select name="status" class="custom-select" required onchange="changeColor(this)">
+                        <select name="status" class="custom-select" required  onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Статус</option>
                             <option value="Ожидается подтверждение">Ожидается подтверждение</option>
                             <option value="Отправка со склада">Отправка со склада</option>
@@ -500,8 +639,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     <div class="input-group">
                         <input type="text" name="id_customer" placeholder="ID покупателя" required>
                     </div>
+                    
+                    <div id="parts-container" style="display: flex; flex-direction: column;">
+                        <h4>Автозапчасти в заказе</h4>
+                        <div class="input-group part-input" style="display: flex; align-items: center;">
+                            <input type="text" name="parts[]" placeholder="ID автозапчасти" required>
+                            <button type="button" class="add-part" onclick="addPart()" style="margin-left: 10px;">➕</button>
+                        </div>
+                    </div>
+                    
+                    <br>
                     <button type="submit" class="btn" name="add_order">Добавить заказ</button>
                 </form>
+
+
                                 <!-- изменение заказа -->
                 <h2>Изменить данные заказа</h2>
                 <form method="POST" action="?table=orders&action=edit">
@@ -551,43 +702,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
 
                 switch ($selectedTable) {
                     case 'users':
-                        if (!isset($_POST['search_users'])&&!isset($_POST['sort_table'])) {
+                        if (!isset($_POST['search_users']) && !isset($_POST['sort_table'])) {
                             $users = $usersTable->fetchLimited($rowCount);
                         }
                         $usersTable->renderTable($users, 'Пользователи');
                         break;
+                
                     case 'auto_parts':
-                        if (!isset($_POST['search_parts'])&&!isset($_POST['sort_table'])) {
+                        if (!isset($_POST['search_parts']) && !isset($_POST['sort_table'])) {
                             $parts = $partsTable->fetchLimited($rowCount);
                         }
                         $partsTable->renderTable($parts, 'Запчасти');
                         break;
+                
                     case 'orders':
-                        $orders = $ordersTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_order']) && !isset($_POST['sort_table'])) {
+                            $orders = $ordersTable->fetchLimited($rowCount);
+                        }
                         $ordersTable->renderTable($orders, 'Заказы');
                         break;
+                
                     case 'customers':
-                        $customers = $customersTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_customers']) && !isset($_POST['sort_table'])) {
+                            $customers = $customersTable->fetchLimited($rowCount);
+                        }
                         $customersTable->renderTable($customers, 'Покупатели');
                         break;
+                
                     case 'staff':
-                        $staffs = $staffsTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_staff']) && !isset($_POST['sort_table'])) {
+                            $staffs = $staffsTable->fetchLimited($rowCount);
+                        }
                         $staffsTable->renderTable($staffs, 'Сотрудники');
                         break;
+                
                     case 'suppliers':
-                        $suppliers = $suppliersTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_suppliers']) && !isset($_POST['sort_table'])) {
+                            $suppliers = $suppliersTable->fetchLimited($rowCount);
+                        }
                         $suppliersTable->renderTable($suppliers, 'Поставщики');
                         break;
-                    case 'inventory':
-                        $inventory = $inventoryTable->fetchLimited($rowCount);
-                        $inventoryTable->renderTable($inventory, 'Инвентарь');
-                        break;
+                
                     case 'cars':
-                        $cars = $carsTable->fetchLimited($rowCount);
+                        if (!isset($_POST['search_cars']) && !isset($_POST['sort_table'])) {
+                            $cars = $carsTable->fetchLimited($rowCount);
+                        }
                         $carsTable->renderTable($cars, 'Автомобили');
                         break;
+                
                     default:
-                        echo "<p>Выберите таблицу из базы данных.</p>";
+                        // Обработка случая, когда выбранная таблица не поддерживается
+                        $message = "Ошибка: выбранная таблица не поддерживается.";
+                        $messageType = "error";
+                        break;
                 }
                 ?>
             </div>

@@ -26,13 +26,7 @@ function previewImage(input) {
 };
 
 
-function changeColor(select) {
-    if (select.value) {
-        select.style.color = 'black'; // Меняем цвет текста на черный при выборе
-    } else {
-        select.style.color = 'gray'; // Сбрасываем цвет текста на серый
-    }
-};
+
 
 $(document).ready(function() {
     $('.delete-btn').click(function(event) {

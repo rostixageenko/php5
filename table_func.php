@@ -101,7 +101,15 @@ class TableFunction {
             $stmt->close();
         }
     }
-
+    public function checkPartOrder($partId) {
+        $sql = "SELECT idorder FROM auto_parts WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $partId); // Предполагается, что id - это целое число
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        return $result->fetch_assoc(); // Возвращает ассоциативный массив с idorder
+    }
     public function renderTable($data, $title) {
         echo "<h2>" . htmlspecialchars($title) . "</h2>";
         
@@ -203,6 +211,119 @@ class TableFunction {
             ];
         }
     }
+
+     // Универсальный метод поиска
+     public function universalSearch($params, $searchableFields, $dateFields = []) 
+     {
+         $conditions = [];
+         $values = [];
+         $types = ''; // Строка для хранения типов данных
+     
+         // Обработка всех полей для поиска
+         foreach ($searchableFields as $field) {
+             if (!empty($params[$field])) {
+                 if ($field === 'purchase_price') {
+                     // Для стоимости используем строгое равенство
+                     $conditions[] = "$field = ?";
+                     $values[] = $params[$field]; // Значение остается как строка
+                     $types .= 's'; // Добавляем тип строки
+                 } else {
+                     // Для остальных полей используем LIKE
+                     $conditions[] = "$field LIKE ?";
+                     $values[] = '%' . $params[$field] . '%';
+                     $types .= 's'; // Добавляем тип строки для всех строковых полей, включая ENUM
+                 }
+             }
+         }
+     
+         // Проверка диапазона дат
+         foreach ($dateFields as $field) {
+             $startDate = $params[$field . '_start'] ?? null;
+             $endDate = $params[$field . '_end'] ?? null;
+     
+             if (!empty($startDate) && !empty($endDate)) {
+                 // Проверка, что конечная дата не раньше начальной
+                 if ($startDate > $endDate) {
+                     return [
+                         'success' => false,
+                         'message' => 'Ошибка: конечная дата не может быть раньше начальной.'
+                     ]; // Если ошибка, возвращаем сообщение
+                 }
+                 $conditions[] = "$field >= ?";
+                 $values[] = $startDate;
+                 $types .= 's'; // Дата считается строкой для MySQL
+     
+                 $conditions[] = "$field <= ?";
+                 $values[] = $endDate;
+                 $types .= 's'; // Дата считается строкой для MySQL
+             } elseif (!empty($startDate)) {
+                 $conditions[] = "$field >= ?";
+                 $values[] = $startDate;
+                 $types .= 's'; // Дата считается строкой для MySQL
+             } elseif (!empty($endDate)) {
+                 $conditions[] = "$field <= ?";
+                 $values[] = $endDate;
+                 $types .= 's'; // Дата считается строкой для MySQL
+             }
+         }
+     
+         // Определение типов для целочисленных параметров
+         if (isset($params['search_order_id']) && !empty($params['search_order_id'])) {
+             $conditions[] = 'id = ?';
+             $values[] = (int)$params['search_order_id'];
+             $types .= 'i'; // Добавляем тип целого числа
+         }
+     
+         if (isset($params['search_id_customer']) && !empty($params['search_id_customer'])) {
+             $conditions[] = 'idcustomer = ?';
+             $values[] = (int)$params['search_id_customer'];
+             $types .= 'i'; // Добавляем тип целого числа
+         }
+     
+         // Добавляем проверки для ENUM полей
+         if (isset($params['search_status']) && !empty($params['search_status'])) {
+             $conditions[] = 'status = ?';
+             $values[] = $params['search_status'];
+             $types .= 's'; // Строка для ENUM
+         }
+     
+         if (isset($params['search_type_order']) && !empty($params['search_type_order'])) {
+             $conditions[] = 'type_order = ?';
+             $values[] = $params['search_type_order'];
+             $types .= 's'; // Строка для ENUM
+         }
+     
+         // Формирование SQL-запроса
+         $sql = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
+         if (!empty($conditions)) {
+             $sql .= " WHERE " . implode(' AND ', $conditions);
+         }
+     
+         // Подготовка и выполнение запроса
+         $stmt = $this->db->prepare($sql);
+     
+         // Проверка наличия значений для привязки
+         if (!empty($values)) {
+             $stmt->bind_param($types, ...$values); // Подготовка параметров
+         }
+     
+         if ($stmt->execute()) {
+             $result = $stmt->get_result();
+             return [
+                 'success' => true,
+                 'data' => $result->fetch_all(MYSQLI_ASSOC) // Получаем массив всех результатов
+             ];
+         } else {
+             return [
+                 'success' => false,
+                 'message' => 'Ошибка: ' . $stmt->error
+             ];
+         }
+     }
+     public function getLastInsertedId() {
+        // Получаем ID последней вставленной записи
+        return $this->db->insert_id;
+    }
 }
 // Подключение к базе данных
 include('server.php');
@@ -234,6 +355,7 @@ $cars = $carsTable->fetchLimited($rowCount);
 $message = "";
 $messageType = "success"; // По умолчанию тип сообщения
 
+ // сортировка
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_field'], $_POST['sort_order'])&&isset($_POST['sort_table'])) {
     $sortField =  isset($_POST['sort_field']) ? trim($_POST['sort_field']) : '';
     $sort_order=  isset($_POST['sort_order']) ? trim($_POST['sort_order']) : '';
@@ -241,11 +363,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_field'], $_POST[
     // Сортируем данные
     switch ($selectedTable) {
         case 'users':
-            $users = $usersTable->universalSort( $sortField, $sort_order);
+            $users = $usersTable->universalSort($sortField, $sort_order);
             break;
         case 'auto_parts':
-            $parts = $partsTable->universalSort( $sortField, $sort_order); 
-            break;      
+            $parts = $partsTable->universalSort($sortField, $sort_order); 
+            break;
+        case 'orders':
+            $orders = $ordersTable->universalSort($sortField, $sort_order);
+            break;
+        case 'customers':
+            $customers = $customersTable->universalSort($sortField, $sort_order);
+            break;
+        case 'staff':
+            $staffs = $staffsTable->universalSort($sortField, $sort_order);
+            break;
+        case 'suppliers':
+            $suppliers = $suppliersTable->universalSort($sortField, $sort_order);
+            break;
+        case 'cars':
+            $cars = $carsTable->universalSort($sortField, $sort_order);
+            break;
+        default:
+            // Обработка случая, когда выбранная таблица не поддерживается
+            $message = "Ошибка: выбранная таблица не поддерживается.";
+            $messageType = "error";
+            break;
     }
 
 } 
@@ -1013,7 +1155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     }
 }
 
-//удаление пользователя
+//удаление автозапчасти
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete'&& $_GET['table'] === 'auto_parts') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
         // Удаляем запись
@@ -1052,11 +1194,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 
 
 
+// добавление заказа
 
-
-
-// добавление заказа 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
+    $suc = true; // Флаг успешного выполнения
     // Собираем данные из формы
     $data = [
         'type_order' => $_POST['type_order'],
@@ -1065,16 +1206,215 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         'idcustomer' => $_POST['id_customer']
     ];
 
-    // Вызов функции добавления
+    // Вызов функции добавления заказа
     $result = $ordersTable->addRecord($data);
 
-    // Вывод сообщения об успехе или ошибке
+    // Если заказ успешно добавлен
     if ($result) {
-        $message = 'Заказ добавлен успешно';
-        $messageType = 'success'; // Успешное сообщение
+        // Получаем ID созданного заказа
+        $orderId = $ordersTable->getLastInsertedId(); // Предполагаем, что эта функция существует
+
+        // Проверяем, есть ли запчасти
+        if (!empty($_POST['parts'])) {
+            foreach ($_POST['parts'] as $partId) {
+                // Проверяем, связана ли запчасть с другим заказом
+                $partCheck = $ordersTable->checkPartOrder($partId); // Предполагаем, что этот метод существует
+
+                if ($partCheck && $partCheck['idorder'] !== null) {
+                    $message = 'Ошибка: Запчасть с ID ' . $partId . ' уже заказана.';
+                    $messageType = 'error';
+                    $suc = false;
+                    break; // Прекращаем цикл при ошибке
+                }
+
+                // Обновляем ID заказа в таблице auto_parts
+                $updateData = [
+                    'idorder' => $orderId
+                ];
+
+                // Вызов функции для обновления автозапчасти
+                $updateResult = $ordersTable->updateRecord('auto_parts', 'id', $partId, $updateData);
+
+                // Проверка результата обновления
+                if ($updateResult['type'] !== 'success') {
+                    $message = 'Ошибка при обновлении запчасти: ' . $updateResult['message'];
+                    $messageType = 'error';
+                    $suc = false;
+                    break; // Прекращаем цикл при ошибке
+                }
+            }
+        }
+
+        // Если все прошло успешно
+        if ($suc) {
+            $login = $_SESSION['login'];
+        $id_user = $_SESSION['user_id'];
+        $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role'  добавил заказ id=$$orderId.";
+            $dbExecutor->insertAction($id_user, $actStr);    
+            $message = 'Заказ добавлен успешно';
+            $messageType = 'success'; // Успешное сообщение
+        }
     } else {
         $message = 'Ошибка: Не удалось добавить заказ';
         $messageType = 'error'; // Ошибка
+    }
+}
+//поиск заказов
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_order'])) {
+    $params = [];
+    $searchableFields = [];
+    
+    // Проверка и добавление параметров
+    if (!empty($_POST['search_order_id'])) {
+        $params['search_order_id'] = $_POST['search_order_id'];
+        $searchableFields[] = 'id';
+    }
+
+    if (!empty($_POST['search_type_order'])) {
+        $params['search_type_order'] = $_POST['search_type_order'];
+        $searchableFields[] = 'type_order';
+    }
+
+    if (!empty($_POST['search_status'])) {
+        $params['search_status'] = $_POST['search_status'];
+        $searchableFields[] = 'status';
+    }
+
+    if (!empty($_POST['search_start_interval'])) {
+        $params['datetime_start'] = $_POST['search_start_interval'];
+        $searchableFields[] = 'datetime';
+    }
+
+    if (!empty($_POST['search_end_interval'])) {
+        $params['datetime_end'] = $_POST['search_end_interval'];
+        $searchableFields[] = 'datetime';
+    }
+
+    if (!empty($_POST['search_purchase_price'])) {
+        $params['search_purchase_price'] = $_POST['search_purchase_price'];
+        $searchableFields[] = 'purchase_price';
+    }
+
+    if (!empty($_POST['search_id_customer'])) {
+        $params['search_id_customer'] = $_POST['search_id_customer'];
+        $searchableFields[] = 'idcustomer';
+    }
+
+    // Поля для проверки диапазона дат
+    $dateFields = ['datetime']; // Укажите поле даты, по которому будет выполняться поиск
+
+    // Выполнение поиска с формированными параметрами
+    $searchResult = $ordersTable->universalSearch($params, $searchableFields, $dateFields);
+
+    if (!$searchResult['success']) {
+        $message = $searchResult['message'];
+        $messageType = 'error';
+    } else {
+        $orders = $searchResult['data'];
+        if (empty($orders)) {
+            $message = "Заказы не найдены.";
+            $messageType = "error"; // Ошибка
+         } 
+        //else {
+        //     $message = ""; // Очистка сообщения, если нашли заказы
+        //     // Здесь можно вызвать renderTable, если данные корректны
+        //     $ordersTable->renderTable($orders, 'Результаты поиска заказов');
+        // }
+    }
+}
+
+// Удаление заказа
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'orders') {
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID заказа для удаления    
+
+    // Обновляем записи в таблице auto_parts, устанавливая idorder в NULL
+    $updatePartsStmt = $db->prepare("UPDATE auto_parts SET idorder = NULL WHERE idorder = ?");
+    $updatePartsStmt->bind_param("i", $id);
+    $updatePartsStmt->execute();
+    $updatePartsStmt->close();
+
+    // Удаляем заказ
+    if ($ordersTable->deleteUser($id) === 1) { 
+        $login = $_SESSION['login'];
+        $id_user = $_SESSION['user_id'];
+        $type_role = $_SESSION['type_role'];
+
+        // Логируем действие
+        $actStr = "Пользователь $login типа '$type_role' удалил заказ id=$id.";
+        $dbExecutor->insertAction($id_user, $actStr);
+
+        // Сообщение об успешном удалении
+        $message = "Заказ успешно удален.";
+        $messageType = "success";
+    } else {
+        // Сообщение об ошибке
+        $message = "Ошибка: заказ не найден или не удалось удалить.";
+        $messageType = "error";
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'orders') {
+    // Извлекаем данные из формы
+    $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $typeOrder = isset($_POST['edit_type_order']) ? $_POST['edit_type_order'] : null;
+    $status = isset($_POST['edit_status']) ? $_POST['edit_status'] : null;
+    $purchasePrice = isset($_POST['edit_purchase_price']) ? floatval($_POST['edit_purchase_price']) : null;
+
+    // Подготовка SQL-запроса для обновления данных
+    $updateFields = [];
+    $params = [];
+
+    // Добавляем поля для обновления, если они не пустые
+    if ($typeOrder !== null) {
+        $updateFields[] = "type_order = ?";
+        $params[] = $typeOrder;
+    }
+    if ($status !== null) {
+        $updateFields[] = "status = ?";
+        $params[] = $status;
+    }
+    if ($purchasePrice !== null) {
+        $updateFields[] = "purchase_price = ?";
+        $params[] = $purchasePrice;
+    }
+
+    // Если нет полей для обновления, выводим сообщение об ошибке
+    if (empty($updateFields)) {
+        $message = "Ошибка: Нет данных для изменения.";
+        $messageType = "error";
+    } else {
+        // Формируем SQL-запрос
+        $sql = "UPDATE orders SET " . implode(", ", $updateFields) . " WHERE id = ?";
+        $params[] = $id; // Добавляем ID заказа в параметры
+
+        // Подготовка и выполнение запроса
+        $stmt = $db->prepare($sql);
+        if ($stmt === false) {
+            throw new Exception('Ошибка подготовки SQL-запроса: ' . $db->error);
+        }
+
+        // Привязываем параметры
+        $types = str_repeat("s", count($params) - 1) . "i"; // Типы параметров (s - строка, i - целое число)
+        $stmt->bind_param($types, ...$params);
+
+        // Выполняем запрос
+        if ($stmt->execute()) {
+            $login = $_SESSION['login'];
+        $id_user = $_SESSION['user_id'];
+        $type_role = $_SESSION['type_role'];
+
+        // Логируем действие
+        $actStr = "Пользователь $login типа '$type_role' изменил заказ id=$id.";
+        $dbExecutor->insertAction($id_user, $actStr);
+            $message = "Данные заказа успешно изменены.";
+            $messageType = "success";
+        } else {
+            $message = "Ошибка: Не удалось изменить данные заказа.";
+            $messageType = "error";
+        }
+
+        $stmt->close(); // Закрываем подготовленный запрос
     }
 }
 ?>

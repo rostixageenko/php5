@@ -12,7 +12,7 @@ $conn = new mysqli($host, $user, $password, $dbname);
 // Проверка соединения
 if ($conn->connect_error) {
     die("Ошибка подключения: " . $conn->connect_error);
-}
+}  
 
 // Установка кодировки соединения на utf8mb4
 $conn->set_charset("utf8mb4");
@@ -34,7 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
     }
 
     if ($result->num_rows === 0) {
-        die("Нет данных в таблице.");
+        $message = 'Нет данных в таблице.';
+        $messageType = "error";
+
     }
 
     $data = [];
@@ -58,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         die('Ошибка кодирования в JSON: ' . json_last_error_msg());
+    }else{
+        $login = $_SESSION['login'];
+        $id_user = $_SESSION['user_id'];
+        $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role'  загрузил таблицу $table.";
+            $dbExecutor->insertAction($id_user, $actStr); 
     }
 
     header('Content-Type: application/json; charset=utf-8');
