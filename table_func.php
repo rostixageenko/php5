@@ -578,9 +578,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
                 $hasError = true; // Устанавливаем флаг ошибки
             }
         }
-        if (!$hasError && $fileData !== null && strlen($fileData) > 55 * 1024) {
-            $fileData = compressImage($fileData); // Сжимаем изображение
-        }
+
+        // // Проверка марки машины
+        // if (!$hasError) {
+        //     // Получаем марку машины
+        //     $stmt = $db->prepare("SELECT brand FROM cars WHERE id = ?");
+        //     $stmt->bind_param("i", $idcar);
+        //     $stmt->execute();
+        //     $stmt->bind_result($carBrand);
+        //     $stmt->fetch();
+        //     $stmt->close();
+
+        //     // Получаем марки машин в гараже
+        //     $stmt = $db->prepare("SELECT idcar_brands FROM garage_car_brands WHERE idgarage = ?"); // Предполагаем, что есть таблица garage_brands
+        //     $stmt->bind_param("i", $idgarage);
+        //     $stmt->execute();
+        //     $result = $stmt->get_result();
+
+        //     $allowedBrands = [];
+        //     while ($row = $result->fetch_assoc()) {
+        //         $allowedBrands[] = $row['idcar_brands']; // Сохраняем все марки в массив
+        //     }
+        //     $stmt->close();
+
+        //     // Проверяем, содержится ли марка машины в списке марок гаража
+        //     if (!in_array($carBrand, $allowedBrands)) {
+        //         $message = "Ошибка: Марка машины не соответствует марке машины гаража.";
+        //         $messageType = "error"; // Ошибка
+        //         $hasError = true; // Устанавливаем флаг ошибки
+        //     }
+        // }
+
         // Проверка загрузки файла (необязательное поле)
         $fileData = null;
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
@@ -621,7 +649,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
                 $fileData = file_get_contents($file['tmp_name']);
             }
         }
-
+        if (!$hasError && $fileData !== null && strlen($fileData) > 55 * 1024) {
+            $fileData = compressImage($fileData); // Сжимаем изображение
+        }
         // Если ошибок нет, выполняем SQL-запрос для вставки данных
         if (!$hasError) {
             $login = $_SESSION['login'];
@@ -636,6 +666,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
             $stmt->bind_param("ssssisss", $name_parts, $article, $condition, $purchase_price, $description, $idcar, $idgarage, $fileData);
 
             if ($stmt->execute()) {
+                 $file="debug.txt";
+                 $data="hello";
+                 file_put_contents($file, $data );
                 $message = "Запчасть успешно добавлена.";
                 $messageType = "success"; // Успех
             } else {
@@ -881,7 +914,7 @@ function compressImage($imageData) {
     }
 
     // Начальное значение качества
-    $quality = 75; 
+    $quality = 90; // Начальное качество, чтобы начать с высокого качества
     $compressedImageData = null;
 
     // Сжимаем изображение, пока его размер не станет меньше 50 КБ
@@ -892,11 +925,52 @@ function compressImage($imageData) {
         ob_end_clean(); // Очищаем буфер
 
         // Уменьшаем качество
-        $quality -= 5;
-    } while (strlen($compressedImageData) > 75 * 1024 && $quality > 0); // Проверяем размер и качество
+        $quality -= 10; // Уменьшаем на 10, чтобы быстрее достигнуть нужного размера
+    } while (strlen($compressedImageData) > 50 * 1024 && $quality > 0); // Проверяем размер и качество
+
+    // Если все еще больше 50 КБ, изменяем размер изображения
+    if (strlen($compressedImageData) > 50 * 1024) {
+        $compressedImageData = resizeAndCompressImage($compressedImageData, 800, 800); // Уменьшаем размер, если необходимо
+    }
 
     imagedestroy($image); // Освобождаем память
     return $compressedImageData; // Возвращаем сжатое изображение
+}
+
+function resizeAndCompressImage($imageData, $maxWidth, $maxHeight) {
+    $image = imagecreatefromstring($imageData);
+    if (!$image) {
+        return $imageData; // Возвращаем оригинал, если создание не удалось
+    }
+
+    // Получаем оригинальные размеры
+    list($width, $height) = getimagesizefromstring($imageData);
+    $ratio = $width / $height;
+
+    // Рассчитываем новые размеры
+    if ($width > $height) {
+        $newWidth = $maxWidth;
+        $newHeight = $maxWidth / $ratio;
+    } else {
+        $newHeight = $maxHeight;
+        $newWidth = $maxHeight * $ratio;
+    }
+
+    // Создаем новое изображение с новыми размерами
+    $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+    imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    // Сжимаем изображение и сохраняем в буфер
+    ob_start();
+    imagejpeg($resizedImage, null, 75); // Используем фиксированное качество
+    $compressedImageData = ob_get_contents();
+    ob_end_clean();
+
+    // Освобождаем память
+    imagedestroy($image);
+    imagedestroy($resizedImage);
+
+    return $compressedImageData; // Возвращаем сжатое и измененное изображение
 }
 
 //поиск автозапчастей

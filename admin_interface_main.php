@@ -521,6 +521,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <!-- добавление заказа -->
                 <h2>Добавить заказ</h2>
                 <form method="POST" action="?table=orders" enctype="multipart/form-data">
+                    
                     <div class="input-group">
                         <select name="type_order" class="custom-select" required>
                             <option value="" disabled selected style="color: gray;">Тип заказа</option>
