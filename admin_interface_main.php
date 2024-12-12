@@ -391,6 +391,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     </div>
                     <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
                 </form>
+
                 <h2>Добавить запчасть</h2>
                 <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
                     <div class="input-group">
@@ -418,13 +419,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                         <label>Добавить изображение</label>
                         <div class="upload-photo" onclick="document.getElementById('file-input').click();">
                             <span class="upload-icon">+</span>
-                            <input type="file" id="file-input" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
+                            <input type="file" id="file-input" name="photo" accept="image/*" required style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр изображения" /> <!-- Элемент для предварительного просмотра изображения -->
                         </div>
                     </div>
-                    <button type="submit" class="btn" name="add_part">Добавить запчасть</button>
+                    <button type="submit" class="btn">Добавить запчасть</button>
                 </form>
-
                 <h2>Изменить запчасть</h2>
                 <form method="POST" action="?table=auto_parts&action=update_part">
                     <div class="input-group">
@@ -476,98 +476,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     </div>
                     <button type="submit" class="btn" name="update_image">Изменить картинку</button>
                 </form>
-                id, name_inventory, , idgarage, identifier
+                
                 <?php elseif ($selectedTable === 'orders'): ?>
-                <h2>Поиск запчастей</h2>
+                    <!-- поиск заказа -->
+                <h2>Поиск заказа</h2>
                 <form method="POST" action="?table=orders&action=search">
                     <div class="input-group">
                         <input type="text" name="search_order_id" placeholder="ID заказа (необязательно)">
                     </div>
                     <div class="input-group">
-                        <input type="text" name="search_type_order" placeholder="Тип заказа (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_status" placeholder="гпзапгтн спмьи (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_type_inventory" placeholder="ID автомобиля (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_identifier" placeholder="ID гаража (необязательно)">
-                    </div>
-                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
-                </form>
-                <h2>Добавить запчасть</h2>
-                <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
-                    <div class="input-group">
-                        <input type="text" name="part_name" placeholder="Название запчасти" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="article" placeholder="Артикул" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="condition" placeholder="Состояние" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="number" name="price" placeholder="Цена" required>
-                    </div>
-                    <div class="input-group">
-                        <textarea name="description" placeholder="Описание" required></textarea>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="car_id" placeholder="ID автомобиля" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="garage_id" placeholder="ID гаража" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Добавить изображение</label>
-                        <div class="upload-photo" onclick="document.getElementById('file-input').click();">
-                            <span class="upload-icon">+</span>
-                            <input type="file" id="file-input" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" name="add_part">Добавить запчасть</button>
-                </form>
-
-                <h2>Изменить запчасть</h2>
-                <form method="POST" action="?table=auto_parts&action=update_part">
-                    <div class="input-group">
-                        <select name="search_field" required class="custom-select" id="mySelect" onchange="changeColor(this)">
-                            <option value="" disabled selected style="color: gray;">Выберите поле для поиска</option>
-                            <option value="id">ID запчасти</option>
-                            <option value="article">Артикул</option>
+                        <select name="search_type_order" class="custom-select" onchange="changeColor(this)">
+                            <option value="" disabled selected style="color: gray;">Тип заказа (необязательно) </option>
+                            <option value="Самовывоз">Самовывоз</option>
+                            <option value="Доставка">Доставка</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="search_value" placeholder="Введите значение для поиска" required>
+                        <select name="search_status" class="custom-select" onchange="changeColor(this)">
+                            <option value="" disabled selected style="color: gray;">Статус заказа (необязательно) </option>
+                            <option value="Ожидается подтверждение">Ожидается подтверждение</option>
+                            <option value="Отправка со склада">Отправка со склада</option>
+                            <option value="В пути">В пути</option>
+                            <option value="Готов к получению">Готов к получению</option>
+                            <option value="Отменён">Отменён</option>
+                        </select>
+                    </div>
+        
+                    <div class="input-group">
+                        <input type="date" name="search_start_interval" >
                     </div>
                     <div class="input-group">
-                        <input type="text" name="new_part_name" placeholder="Новое название (необязательно)">
+                        <input type="date" name="search_end_interval" >
+                    </div>
+        
+                    <div class="input-group">
+                        <input type="text" name="search_purchase_price" placeholder="Итоговая цена заказа (необязательно)">
                     </div>
                     <div class="input-group">
-                        <input type="text" name="new_article" placeholder="Новый артикул (необязательно)">
+                        <input type="text" name="search_id_customer" placeholder="ID покупателя (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
+                </form>
+
+                <!-- добавление заказа -->
+                <h2>Добавить заказ</h2>
+                <form method="POST" action="?table=orders" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <select name="type_order" class="custom-select" required>
+                            <option value="" disabled selected style="color: gray;">Тип заказа</option>
+                            <option value="Самовывоз">Самовывоз</option>
+                            <option value="Доставка">Доставка</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="new_condition" placeholder="Новое состояние (необязательно)">
+                        <select name="status" class="custom-select" required>
+                            <option value="" disabled selected style="color: gray;">Статус</option>
+                            <option value="Ожидается подтверждение">Ожидается подтверждение</option>
+                            <option value="Отправка со склада">Отправка со склада</option>
+                            <option value="В пути">В пути</option>
+                            <option value="Готов к получению">Готов к получению</option>
+                            <option value="Отменён">Отменён</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <input type="number" name="new_price" placeholder="Новая цена (необязательно)">
+                        <input type="text" name="purchase_price" placeholder="Итоговая цена заказа" required>
                     </div>
                     <div class="input-group">
-                        <textarea name="new_description" placeholder="Новое описание (необязательно)"></textarea>
+                        <input type="text" name="id_customer" placeholder="ID покупателя" required>
+                    </div>
+                    <button type="submit" class="btn" name="add_order">Добавить заказ</button>
+                </form>
+                                <!-- изменение заказа -->
+                <h2>Изменить данные заказа</h2>
+                <form method="POST" action="?table=orders&action=edit">
+                    <div class="input-group">
+                        <input type="text" name="edit_id" placeholder="ID заказа" required>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="new_car_id" placeholder="ID автомобиля (необязательно)">
+                        <select name="edit_type_order" class="custom-select" onchange="changeColor(this)">
+                            <option value="" disabled selected style="color: gray;">Выберите новый тип заказа </option>
+                            <option value="Самовывоз">Самовывоз</option>
+                            <option value="Доставка">Доставка</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="new_garage_id" placeholder="ID гаража (необязательно)">
+                        <select name="edit_status" class="custom-select" onchange="changeColor(this)">
+                            <option value="" disabled selected style="color: gray;">Выберите новый статус (необязательно)</option>
+                            <option value="Ожидается подтверждение">Ожидается подтверждение</option>
+                            <option value="Отправка со склада">Отправка со склада</option>
+                            <option value="В пути">В пути</option>
+                            <option value="Готов к получению">Готов к получению</option>
+                            <option value="Отменён">Отменён</option>
+                        </select>
                     </div>
-                    <button type="submit" class="btn" name="update_part">Изменить запчасть</button>
+                    <div class="input-group">
+                        <input type="text" name="edit_purchase_price" placeholder="Новая цена покупки">
+                    </div>
+                    <button type="submit" name="edit_order" class="btn">Изменить</button>
                 </form>
     
             <?php else: ?>
@@ -581,7 +586,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <button type="submit" class="btn">Вывести</button>
             </form>
         </div>
-
+        
         <div class="tables-container">
             <div class="table-scroll">
                 <?php

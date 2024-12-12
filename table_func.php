@@ -170,6 +170,39 @@ class TableFunction {
         // Выполняем запрос
         return $this->executeQuery($query);
     }
+
+    public function addRecord($data) {
+        // Проверка на наличие данных
+        if (empty($data) || !is_array($data)) {
+            return [
+                'message' => 'Ошибка: Неверные данные для добавления.',
+                'type' => 'error'
+            ];
+        }
+
+        // Формирование SQL-запроса
+        $fields = implode(", ", array_keys($data));
+        $placeholders = implode(", ", array_fill(0, count($data), '?'));
+        $sql = "INSERT INTO " . mysqli_real_escape_string($this->db, $this->tableName) . " ($fields) VALUES ($placeholders)";
+
+        // Подготовка параметров
+        $stmt = $this->db->prepare($sql);
+        $types = str_repeat('s', count($data)); // Предполагаем, что все данные - строки
+        $stmt->bind_param($types, ...array_values($data));
+
+        // Выполнение запроса
+        if ($stmt->execute()) {
+            return [
+                'message' => 'Запись успешно добавлена.',
+                'type' => 'success'
+            ];
+        } else {
+            return [
+                'message' => 'Ошибка: ' . $stmt->error,
+                'type' => 'error'
+            ];
+        }
+    }
 }
 // Подключение к базе данных
 include('server.php');
@@ -940,6 +973,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 
     $db->query("ALTER TABLE history_operations_with_autoparts ADD CONSTRAINT `history_operations_with_autoparts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
     $db->query("ALTER TABLE  cart_auto_parts ADD CONSTRAINT `cart_auto_parts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
+}
+
+
+
+
+
+
+
+// добавление заказа 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
+    // Собираем данные из формы
+    $data = [
+        'type_order' => $_POST['type_order'],
+        'status' => $_POST['status'],
+        'purchase_price' => $_POST['purchase_price'],
+        'idcustomer' => $_POST['id_customer']
+    ];
+
+    // Вызов функции добавления
+    $result = $ordersTable->addRecord($data);
+
+    // Вывод сообщения об успехе или ошибке
+    echo "<div class='{$result['type']}'>{$result['message']}</div>";
 }
 
 ?>
