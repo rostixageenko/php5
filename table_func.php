@@ -580,34 +580,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         }
 
         // // Проверка марки машины
-        // if (!$hasError) {
-        //     // Получаем марку машины
-        //     $stmt = $db->prepare("SELECT brand FROM cars WHERE id = ?");
-        //     $stmt->bind_param("i", $idcar);
-        //     $stmt->execute();
-        //     $stmt->bind_result($carBrand);
-        //     $stmt->fetch();
-        //     $stmt->close();
+        if (!$hasError) {
+            // Получаем марку машины
+            $stmt = $db->prepare("SELECT brand FROM cars WHERE id = ?");
+            $stmt->bind_param("i", $idcar);
+            $stmt->execute();
+            $stmt->bind_result($carBrand);
+            $stmt->fetch();
+            $stmt->close();
 
-        //     // Получаем марки машин в гараже
-        //     $stmt = $db->prepare("SELECT idcar_brands FROM garage_car_brands WHERE idgarage = ?"); // Предполагаем, что есть таблица garage_brands
-        //     $stmt->bind_param("i", $idgarage);
-        //     $stmt->execute();
-        //     $result = $stmt->get_result();
+            // Получаем марки машин в гараже
+            $stmt = $db->prepare("SELECT idcar_brands FROM garage_car_brands WHERE idgarage = ?"); // Предполагаем, что есть таблица garage_brands
+            $stmt->bind_param("i", $idgarage);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-        //     $allowedBrands = [];
-        //     while ($row = $result->fetch_assoc()) {
-        //         $allowedBrands[] = $row['idcar_brands']; // Сохраняем все марки в массив
-        //     }
-        //     $stmt->close();
+            $allowedBrands = [];
+            while ($row = $result->fetch_assoc()) {
+                $allowedBrands[] = $row['idcar_brands']; // Сохраняем все марки в массив
+            }
+            $stmt->close();
 
-        //     // Проверяем, содержится ли марка машины в списке марок гаража
-        //     if (!in_array($carBrand, $allowedBrands)) {
-        //         $message = "Ошибка: Марка машины не соответствует марке машины гаража.";
-        //         $messageType = "error"; // Ошибка
-        //         $hasError = true; // Устанавливаем флаг ошибки
-        //     }
-        // }
+            // Проверяем, содержится ли марка машины в списке марок гаража
+            if (!in_array($carBrand, $allowedBrands)) {
+                $message = "Ошибка: Марка машины не соответствует марке машины гаража.";
+                $messageType = "error"; // Ошибка
+                $hasError = true; // Устанавливаем флаг ошибки
+            }
+        }
 
         // Проверка загрузки файла (необязательное поле)
         $fileData = null;
@@ -1069,7 +1069,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
     $result = $ordersTable->addRecord($data);
 
     // Вывод сообщения об успехе или ошибке
-    echo "<div class='{$result['type']}'>{$result['message']}</div>";
+    if ($result) {
+        $message = 'Заказ добавлен успешно';
+        $messageType = 'success'; // Успешное сообщение
+    } else {
+        $message = 'Ошибка: Не удалось добавить заказ';
+        $messageType = 'error'; // Ошибка
+    }
 }
-
 ?>

@@ -1,9 +1,6 @@
 <?php
 include('table_func.php'); // Подключаем файл с функциями и классами
 
-$message = "";
-$messageType = "success"; // По умолчанию тип сообщения
-
 // Проверка, была ли загружена форма
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
     $fileContent = file_get_contents($_FILES['json_file']['tmp_name']);
@@ -40,9 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
         }
     }
 }
+
 ?>
 
 <!DOCTYPE html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -118,70 +117,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
         }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
         .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
-
-        .close-upload{
-         color: #aaa; float: right; font-size: 28px; font-weight: bold; 
-        }
-        .close-upload:hover, .close-upload:focus { color: black; text-decoration: none; cursor: pointer; }
-
-        .file-upload {
-            display: flex;
-            align-items: center; /* Выравнивание по центру */
-            margin-bottom: 15px; /* Отступ между полями */
-        }
-
-        input[type="file"] {
-            height: 25px;
-            width: 358px;
-         /* margin-left: 10px; Отступ между текстом и полем загрузки */
-        }
     </style>
     <script>
-   document.addEventListener("DOMContentLoaded", function() {
-        // Закрытие модального окна при клике вне
-        window.onclick = function(event) {
-        const modal = document.getElementById('myModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    // Открытие модального окна для выгрузки
-    document.getElementById('openModal').onclick = function() {
-        document.getElementById('myModal').style.display = 'block';
-    }
-
-    // Закрытие модального окна для выгрузки
-    document.querySelector('.close').onclick = function() {
-        document.getElementById('myModal').style.display = 'none';
-    }
-
-    // Открытие модального окна для загрузки
-    document.getElementById('openUploadModal').onclick = function() {
-        document.getElementById('uploadModal').style.display = 'block';
-    }
-
-    // Закрытие модального окна для загрузки
-    document.querySelector('.close-upload').onclick = function() {
-        document.getElementById('uploadModal').style.display = 'none';
-    }
-    window.onclick = function(event) {
-        const modal = document.getElementById('uploadModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    }
-    // Закрытие модального окна при клике на крестик
-    document.querySelectorAll('.close').forEach(function(closeButton) {
-        closeButton.onclick = function() {
-            const modal = closeButton.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('openModal').onclick = function() {
+                document.getElementById('myModal').style.display = 'block';
             }
-        }
-    });
-});
-</script>
+
+            document.querySelector('.close').onclick = function() {
+                document.getElementById('myModal').style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                const modal = document.getElementById('myModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+    </script>
 </head>
 <body>
 <header>
@@ -198,8 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=inventory">Инвентарь</a>
                 <a href="?table=cars">Автомобили</a>
-                <button id="openModal" class="custom-button">Выгрузить таблицу</button>
-                <button id="openUploadModal" class="custom-button">Загрузить таблицу</button> <!-- Новая кнопка -->
+                <button id="openModal" class="custom-button">Выгрузить таблицу</button> 
+                <button id="openUploadModal" class="custom-button">Загрузить таблицу</button> 
             </div>
         </div>
         <a href="activity_log.php" class="button">История операций</a>
@@ -209,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
 </header>
 
-<!-- Модальное окно для выгрузки -->
+<!-- Модальное окно -->
 <div id="myModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
@@ -277,9 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
     </div>
 </div>
 </body>
+</html>
 
 <main>
-    <!-- сортировка -->
     <div class="container">
         <div class="form-container">
         <h2>Сортировка данных</h2>
@@ -297,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 break;
                 case "auto_parts":
                 echo "<option value='id'>ID</option>";
-                echo "<option value='name_parts'>Название запчасти</option>";
+                echo "<option value='name_part'>Название запчасти</option>";
                 echo "<option value='article'>Артикул</option>";
                 echo "<option value='purchase_price'>Цена</option>";
                 break;
@@ -391,7 +345,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     </div>
                     <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
                 </form>
-
                 <h2>Добавить запчасть</h2>
                 <form method="POST" action="?table=auto_parts" enctype="multipart/form-data">
                     <div class="input-group">
@@ -419,12 +372,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                         <label>Добавить изображение</label>
                         <div class="upload-photo" onclick="document.getElementById('file-input').click();">
                             <span class="upload-icon">+</span>
-                            <input type="file" id="file-input" name="photo" accept="image/*" required style="display:none;" onchange="previewImage(this)">
-                            <img src="" alt="Предварительный просмотр изображения" /> <!-- Элемент для предварительного просмотра изображения -->
+                            <input type="file" id="file-input" name="photo" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                            <img src="" alt="Предварительный просмотр изображения" style="display: none;" />
                         </div>
                     </div>
-                    <button type="submit" class="btn">Добавить запчасть</button>
+                    <button type="submit" class="btn" name="add_part">Добавить запчасть</button>
                 </form>
+
                 <h2>Изменить запчасть</h2>
                 <form method="POST" action="?table=auto_parts&action=update_part">
                     <div class="input-group">
@@ -476,6 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     </div>
                     <button type="submit" class="btn" name="update_image">Изменить картинку</button>
                 </form>
+
                 
                 <?php elseif ($selectedTable === 'orders'): ?>
                     <!-- поиск заказа -->
@@ -523,14 +478,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <form method="POST" action="?table=orders" enctype="multipart/form-data">
                     
                     <div class="input-group">
-                        <select name="type_order" class="custom-select" required>
+                        <select name="type_order" class="custom-select" required onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Тип заказа</option>
                             <option value="Самовывоз">Самовывоз</option>
                             <option value="Доставка">Доставка</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <select name="status" class="custom-select" required>
+                        <select name="status" class="custom-select" required onchange="changeColor(this)">
                             <option value="" disabled selected style="color: gray;">Статус</option>
                             <option value="Ожидается подтверждение">Ожидается подтверждение</option>
                             <option value="Отправка со склада">Отправка со склада</option>
@@ -540,7 +495,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                         </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="purchase_price" placeholder="Итоговая цена заказа" required>
+                        <input type="number" name="purchase_price" placeholder="Итоговая цена заказа" required>
                     </div>
                     <div class="input-group">
                         <input type="text" name="id_customer" placeholder="ID покупателя" required>
@@ -571,7 +526,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                         </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="edit_purchase_price" placeholder="Новая цена покупки">
+                        <input type="number" name="edit_purchase_price" placeholder="Новая цена покупки">
                     </div>
                     <button type="submit" name="edit_order" class="btn">Изменить</button>
                 </form>
@@ -587,7 +542,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                 <button type="submit" class="btn">Вывести</button>
             </form>
         </div>
-        
+
         <div class="tables-container">
             <div class="table-scroll">
                 <?php
@@ -622,6 +577,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
                     case 'suppliers':
                         $suppliers = $suppliersTable->fetchLimited($rowCount);
                         $suppliersTable->renderTable($suppliers, 'Поставщики');
+                        break;
+                    case 'inventory':
+                        $inventory = $inventoryTable->fetchLimited($rowCount);
+                        $inventoryTable->renderTable($inventory, 'Инвентарь');
                         break;
                     case 'cars':
                         $cars = $carsTable->fetchLimited($rowCount);
