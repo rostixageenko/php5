@@ -969,7 +969,7 @@ function changeColor(select) {
                         <input type="text" name="purchase_price" placeholder="Цена покупки" required>
                     </div>
                     <div class="input-group">
-                        <textarea name="condition" placeholder="Состояние ( необязательно)"></textarea>
+                        <textarea name="condition" placeholder="Состояние (цвет,статус,особенности)"></textarea>
                     </div>
                     <div class="input-group">
                         <input type="number" name="idgarage" placeholder="ID гаража" required>
@@ -1039,7 +1039,7 @@ function changeColor(select) {
                         <input type="text" name="edit_purchase_price" placeholder="Цена покупки">
                     </div>
                     <div class="input-group">
-                        <textarea name="edit_condition" placeholder="Состояние (в формате JSON, необязательно)"></textarea>
+                        <textarea name="edit_condition" placeholder="Состояние (цвет,статус,особенности)"></textarea>
                     </div>
                     <div class="input-group">
                         <input type="number" name="edit_idgarage" placeholder="ID гаража">
@@ -1051,19 +1051,38 @@ function changeColor(select) {
                         <input type="number" name="edit_mileage" placeholder="Пробег">
                     </div>
                     <div class="input-group">
-                        <input type="datetime-local" name="edit_date_receipt" placeholder="Дата поступления">
-                    </div>
-                    <div class="input-group">
                         <input type="text" name="edit_engine_volume" placeholder="Объем двигателя (л)">
                     </div>
                     <div class="input-group">
-                        <input type="text" name="edit_fuel_type" placeholder="Тип топлива">
+                        <label for="fuel_type">Тип топлива:</label>
+                        <select name="fuel_type" id="fuel_type" onchange="changeColor(this)" >
+                            <option value="">Выберите тип топлива</option>
+                            <option value="бензин">Бензин</option>
+                            <option value="дизель">Дизель</option>
+                            <option value="газ">Газ</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="edit_transmission_type" placeholder="Тип трансмиссии">
+                        <label for="transmission_type">Тип трансмиссии:</label>
+                        <select name="transmission_type" id="transmission_type" onchange="changeColor(this)" >
+                            <option value="">Выберите тип трансмиссии</option>
+                            <option value="механика">Механика</option>
+                            <option value="автомат">Автомат</option>
+                            <option value="робот">Робот</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="edit_body_type" placeholder="Тип кузова">
+                        <label for="body_type">Тип кузова:</label>
+                        <select name="body_type" id="body_type"  onchange="changeColor(this)" >
+                            <option value="">Выберите тип кузова</option>
+                            <option value="седан">Седан</option>
+                            <option value="кроссовер">Кроссовер</option>
+                            <option value="хэтчбек">Хэтчбек</option>
+                            <option value="купэ">Купэ</option>
+                            <option value="универсал">Универсал</option>
+                            <option value="SUV">SUV</option>
+                            <option value="пикап">Пикап</option>
+                        </select>
                     </div>
                     <button type="submit" class="btn" name="edit_car">Изменить автомобиль</button>
                 </form>
@@ -1086,7 +1105,7 @@ function changeColor(select) {
             <div class="table-scroll">
                 <?php
                 // Вывод данных с учетом ограничения
-                $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
+                $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 50; // По умолчанию 25 строк
 
                 switch ($selectedTable) {
                     case 'users':

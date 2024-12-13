@@ -1,4 +1,5 @@
 <?php
+include("db_executer.php");
 // Настройки подключения к базе данных
 $host = 'localhost'; // Хост
 $user = 'root'; // Имя пользователя
@@ -7,7 +8,6 @@ $dbname = 'auto_disassembly_station'; // Имя базы данных
 
 // Соединение с базой данных
 $conn = new mysqli($host, $user, $password, $dbname);
-
 
 // Проверка соединения
 if ($conn->connect_error) {
@@ -60,13 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         die('Ошибка кодирования в JSON: ' . json_last_error_msg());
-    }else{
-        $login = $_SESSION['login'];
-        $id_user = $_SESSION['user_id'];
-        $type_role = $_SESSION['type_role'];
-            $actStr = "Пользователь $login типа '$type_role'  загрузил таблицу $table.";
-            $dbExecutor->insertAction($id_user, $actStr); 
     }
+    // else{
+    //     $login = $_SESSION['login'];
+    //     $id_user = $_SESSION['user_id'];
+    //     $type_role = $_SESSION['type_role'];
+    //         $actStr = "Пользователь $login типа '$type_role'  выгрузил таблицу $table.";
+    //         $dbExecutor->insertAction($id_user, $actStr); 
+    // }
 
     header('Content-Type: application/json; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $tableName . '_export.json"');

@@ -155,6 +155,10 @@ class TableFunction {
                         echo "</td>";
                     } elseif ($key === 'password') {
                         echo "<td>Пароль недоступен для просмотра</td>";
+                    } elseif ($this->is_json($cell)) {
+                        // Если это JSON, выводим его без кавычек
+                        $jsonData = json_decode($cell, true); // Декодируем JSON в массив
+                        echo "<td><pre style='white-space: pre-wrap;'>" . htmlspecialchars($this->formatJsonWithoutQuotes($jsonData)) . "</pre></td>";
                     } else {
                         echo "<td>" . htmlspecialchars($cell) . "</td>";
                     }
@@ -173,11 +177,42 @@ class TableFunction {
             echo "<p>Нет данных для отображения.</p>";
         }
     }
+    
     // Публичная функция для проверки, является ли строка JSON
     public function is_json($string) {
         return is_string($string) && !empty($string) && ($string[0] === '{' || $string[0] === '[') && json_last_error() === JSON_ERROR_NONE;
     }
-
+    
+    // Функция для форматирования JSON без кавычек
+    private function formatJsonWithoutQuotes($jsonData) {
+        // Преобразуем массив в строку без кавычек и индексов
+        $result = '';
+    
+        if (is_array($jsonData)) {
+            foreach ($jsonData as $key => $value) {
+                // Добавляем название группы (ключ)
+                $result .= "$key:\n";
+                
+                if (is_array($value)) {
+                    // Если значение - массив, добавляем его элементы
+                    foreach ($value as $item) {
+                        if (is_array($item)) {
+                            // Рекурсивный вызов для вложенных массивов
+                            $result .= $this->formatJsonWithoutQuotes($item);
+                        } else {
+                            // Добавляем только значение
+                            $result .= "  - $item\n"; // Используем отступ для лучшего форматирования
+                        }
+                    }
+                } else {
+                    // Если значение не массив, просто добавляем его
+                    $result .= "  - $value\n"; // Используем отступ для лучшего форматирования
+                }
+            }
+        }
+    
+        return trim($result); // Удаляем лишние пробелы в конце
+    }
     public function universalSort(string $sortField, string $order): array {
         $query = "SELECT * FROM `$this->tableName` ORDER BY `$sortField` $order";       
         // Выполняем запрос
@@ -751,6 +786,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 //добавление запчасти
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['table'] === 'auto_parts'&&isset($_POST['add_part'])) {
     $hasError = false; // Флаг для отслеживания ошибок
+    if (isset($_POST['description'])) {
+        $descriptionString = $_POST['description'];
+        $descriptionArray = explode(',', $descriptionString);
+        
+        $color = isset($descriptionArray[0]) ? trim($conditionArray[0]) : null;
+        $status = isset($conditionArray[1]) ? trim($conditionArray[1]) : null;
+        $features = array_slice($conditionArray, 2); 
+
+        $descriptionData = [
+            'описание' => array_map('trim', $features)
+        ];
+    
+        // Преобразуем массив в JSON с поддержкой русских символов
+        $descriptionJson = json_encode($descriptionData, JSON_UNESCAPED_UNICODE);
+    } else {
+        $descriptionJson = null;
+    }
 
     // Проверка на заполнение обязательных полей
     if (empty($_POST['part_name']) || empty($_POST['article']) || empty($_POST['condition']) || empty($_POST['price']) || empty($_POST['car_id']) || empty($_POST['garage_id'])) {
@@ -761,9 +813,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         // Получаем данные из формы
         $name_parts = $_POST['part_name'];
         $article = $_POST['article'];
-        $condition = $_POST['condition'];
+        $condition = $_POST['conditionJson'];
         $purchase_price = $_POST['price'];
-        $description = $_POST['description'] ?? null; // Необязательное поле
+        $description = $descriptionJson ?? null; // Необязательное поле
         $idcar = $_POST['car_id'];
         $idgarage = $_POST['garage_id']; // Обязательное поле
 
@@ -914,7 +966,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
     // Получаем значения из формы
     $search_field = $_POST['search_field'];
     $search_value = $_POST['search_value'];
+    if (isset($_POST['description'])) {
+        $descriptionString = $_POST['description'];
+        $descriptionArray = explode(',', $descriptionString);
+        
+        $color = isset($descriptionArray[0]) ? trim($conditionArray[0]) : null;
+        $status = isset($conditionArray[1]) ? trim($conditionArray[1]) : null;
+        $features = array_slice($conditionArray, 2); 
 
+        $descriptionData = [
+            'описание' => array_map('trim', $features)
+        ];
+    
+        // Преобразуем массив в JSON с поддержкой русских символов
+        $descriptionJson = json_encode($descriptionData, JSON_UNESCAPED_UNICODE);
+    } else {
+        $descriptionJson = null;
+    }
     // Инициализируем массив данных для обновления
     $data = [];
 
@@ -932,7 +1000,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         $data['purchase_price'] = $_POST['new_price'];
     }
     if (!empty($_POST['new_description'])) {
-        $data['description'] = $_POST['new_description'];
+        $data['description'] = $descriptionJson;
     }
     if (!empty($_POST['new_car_id'])) {
         $data['idcar'] = $_POST['new_car_id'];
@@ -2489,7 +2557,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_car'])) {
 // Добавление автомобиля
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_car'])) {
     $suc = true; // Флаг успешного выполнения
+    
+    if (isset($_POST['condition'])) {
+        $conditionString = $_POST['condition'];
+        $conditionArray = explode(',', $conditionString);
+        
+        $color = isset($conditionArray[0]) ? trim($conditionArray[0]) : null;
+        $status = isset($conditionArray[1]) ? trim($conditionArray[1]) : null;
+        $features = array_slice($conditionArray, 2); 
 
+        $conditionData = [
+            'цвет' => $color,
+            'статус' => $status,
+            'особенности' => array_map('trim', $features) 
+        ];
+    
+        // Преобразуем массив в JSON с поддержкой русских символов
+        $conditionJson = json_encode($conditionData, JSON_UNESCAPED_UNICODE);
+    } else {
+        $conditionJson = null;
+    }
+    
     // Собираем данные из формы
     $data = [
         'brand' => $_POST['brand'],
@@ -2497,7 +2585,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_car'])) {
         'year_production' => $_POST['year_production'],
         'VIN_number' => $_POST['VIN_number'],
         'purchase_price' => $_POST['purchase_price'],
-        '`condition`' => isset($_POST['condition']) ? json_encode($_POST['condition'], JSON_UNESCAPED_UNICODE) : null, // Конвертация в JSON с поддержкой русских символов
+        '`condition`' =>$conditionJson, 
         'idgarage' => $_POST['idgarage'],
         'idsupplier' => $_POST['idsupplier'],
         'mileage' => $_POST['mileage'] ?? null,
@@ -2580,5 +2668,263 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_car'])) {
     }
 }
 
+// Изменение данных автомобиля
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'cars') {
+    // Извлекаем данные из формы
+    $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $brand = isset($_POST['edit_brand']) ? $_POST['edit_brand'] : null;
+    $model = isset($_POST['edit_model']) ? $_POST['edit_model'] : null;
+    $yearProduction = isset($_POST['edit_year_production']) ? intval($_POST['edit_year_production']) : null;
+    $vinNumber = isset($_POST['edit_VIN_number']) ? $_POST['edit_VIN_number'] : null;
+    $purchasePrice = isset($_POST['edit_purchase_price']) ? floatval($_POST['edit_purchase_price']) : null;
+    $idGarage = isset($_POST['edit_idgarage']) ? intval($_POST['edit_idgarage']) : null;
+    $idSupplier = isset($_POST['edit_idsupplier']) ? intval($_POST['edit_idsupplier']) : null;
+    $mileage = isset($_POST['edit_mileage']) ? intval($_POST['edit_mileage']) : null;
+    $engineVolume = isset($_POST['edit_engine_volume']) ? floatval($_POST['edit_engine_volume']) : null;
+    $fuelType = isset($_POST['fuel_type']) ? $_POST['fuel_type'] : null;
+    $transmissionType = isset($_POST['transmission_type']) ? $_POST['transmission_type'] : null;
+    $bodyType = isset($_POST['body_type']) ? $_POST['body_type'] : null;
+
+
+    if (isset($_POST['condition'])) {
+        $conditionString = $_POST['condition'];
+        $conditionArray = explode(',', $conditionString);
+        
+        $color = isset($conditionArray[0]) ? trim($conditionArray[0]) : null;
+        $status = isset($conditionArray[1]) ? trim($conditionArray[1]) : null;
+        $features = array_slice($conditionArray, 2); 
+
+        $conditionData = [
+            'цвет' => $color,
+            'статус' => $status,
+            'особенности' => array_map('trim', $features) 
+        ];
+    
+        // Преобразуем массив в JSON с поддержкой русских символов
+        $conditionJson = json_encode($conditionData, JSON_UNESCAPED_UNICODE);
+    } else {
+        $conditionJson = null;
+    }
+
+    $suc = true; // Флаг успешного выполнения
+
+    // Проверка на существующий VIN номер
+    if ($vinNumber) {
+        $existingVIN = $carsTable->getCarByVIN($vinNumber);
+        if ($existingVIN && $existingVIN['id'] != $id) { // Проверяем, что VIN занят другим автомобилем
+            $message = 'Ошибка: VIN номер уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Получаем старые данные автомобиля
+    if ($suc) {
+        $stmt = $db->prepare("SELECT * FROM cars WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $car = $result->fetch_assoc();
+
+        if (!$car) {
+            $message = 'Ошибка: Автомобиль не найден.';
+            $messageType = 'error';
+            $suc = false;
+        }
+    }
+
+    // Проверка существования поставщика
+    if($idSupplier){
+       $existingSupplier = $suppliersTable->getSupplierById($idSupplier);
+    if (!$existingSupplier) {
+        $message = 'Ошибка: Поставщик с указанным ID не найден.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    } 
+    }
+    
+
+    // Проверка idgarage
+    if($idGarage){
+         if (!isset($idGarage) || $idGarage< 1 || $idGarage > 4) {
+        $message = 'Ошибка: ID гаража должен быть от 1 до 4.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+        }
+    }
+   
+
+    if ($suc&&$idGarage&&$brand) {
+        $stmt = $db->prepare("
+            SELECT 1 FROM garage g 
+            JOIN garage_car_brands gcb ON g.id = gcb.idgarage
+            JOIN car_brands cb ON gcb.idcar_brands = cb.id
+            WHERE name_brand = ? AND idgarage = ?;
+        ");
+        $stmt->bind_param("si", $brand, $idGarage);
+        $stmt->execute();
+        $result_check = $stmt->get_result();
+
+        if ($result_check->num_rows === 0) {
+            $message = 'Ошибка: Комбинация марки и гаража некорректна. Пожалуйста, проверьте введенные данные.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    if ($suc&&$idGarage&&!$brand) {
+        $stmt = $db->prepare("
+            SELECT 1 FROM garage g 
+            JOIN garage_car_brands gcb ON g.id = gcb.idgarage
+            JOIN car_brands cb ON gcb.idcar_brands = cb.id
+            WHERE name_brand = ? AND idgarage = ?;
+        ");
+        $stmt->bind_param("si", $car['brand'], $idGarage);
+        $stmt->execute();
+        $result_check = $stmt->get_result();
+
+        if ($result_check->num_rows === 0) {
+            $message = 'Ошибка: Комбинация марки и гаража некорректна. Пожалуйста, проверьте введенные данные.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    if ($suc&&!$idGarage&&$brand) {
+        $stmt = $db->prepare("
+            SELECT 1 FROM garage g 
+            JOIN garage_car_brands gcb ON g.id = gcb.idgarage
+            JOIN car_brands cb ON gcb.idcar_brands = cb.id
+            WHERE name_brand = ? AND idgarage = ?;
+        ");
+        $stmt->bind_param("si", $brand, $car['idgarage']);
+        $stmt->execute();
+        $result_check = $stmt->get_result();
+
+        if ($result_check->num_rows === 0) {
+            $message = 'Ошибка: Комбинация марки и гаража некорректна. Пожалуйста, проверьте введенные данные.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    if ($suc) {
+        // Подготовка данных для обновления
+        $data = [];
+        if ($brand !== null) $data['brand'] = $brand;
+        if ($model !== null) $data['model'] = $model;
+        if ($yearProduction !== null) $data['year_production'] = $yearProduction;
+        if ($vinNumber !== null) $data['VIN_number'] = $vinNumber;
+        if ($purchasePrice !== null) $data['purchase_price'] = $purchasePrice;
+        if ($_POST['condition'] !== null) $data['condition']=$conditionJson;
+        if ($idGarage !== null) $data['idgarage'] = $idGarage;
+        if ($idSupplier !== null) $data['idsupplier'] = $idSupplier;
+        if ($mileage !== null) $data['mileage'] = $mileage;
+        if ($engineVolume !== null) $data['engine_volume'] = $engineVolume;
+        if ($fuelType !== null) $data['fuel_type'] = $fuelType;
+        if ($transmissionType !== null) $data['transmission_type'] = $transmissionType;
+        if ($bodyType !== null) $data['body_type'] = $bodyType;
+
+        // Начинаем транзакцию
+        $db->begin_transaction();
+
+        try {
+            // Инициализируем переменные результата
+            $result = ['type' => 'error']; // Значение по умолчанию
+            
+            // Обновление данных автомобиля, если есть что обновлять
+            if (!empty($data)) {
+                $result = $carsTable->updateRecord('cars', 'id', $id, $data);
+            }
+
+            // Проверяем результат выполнения
+            if ($result['type'] === 'success') {
+                $db->commit(); // Фиксация транзакции
+                $login = $_SESSION['login'];
+                $type_role = $_SESSION['type_role'];
+
+                // Логируем действие
+                $actStr = "Пользователь $login типа '$type_role' изменил данные автомобиля id=$id.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $message = 'Данные автомобиля успешно изменены.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка при обновлении данных автомобиля.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+// Удаление автомобиля
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'cars') {
+    // Извлекаем ID автомобиля из формы
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+
+    $suc = true; // Флаг успешного выполнения
+
+    // Получаем данные автомобиля по ID
+    if ($suc) {
+        $stmt = $db->prepare("SELECT * FROM cars WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $car = $result->fetch_assoc();
+
+        if (!$car) {
+            $message = 'Ошибка: Автомобиль не найден.';
+            $messageType = 'error';
+            $suc = false;
+        }
+    }
+
+    if ($suc) {
+        // Начинаем транзакцию
+        $db->begin_transaction();
+
+        try {
+            $db->query("ALTER TABLE cart_auto_parts DROP FOREIGN KEY cart_auto_parts_ibfk_2;");
+            $db->query("ALTER TABLE history_operations_with_autoparts DROP FOREIGN KEY history_operations_with_autoparts_ibfk_2;");
+
+            $stmt_cart = $db->prepare("DELETE FROM history_operations_with_autoparts WHERE idautoparts = ?");
+            $stmt_cart->bind_param("i", $id);
+            $stmt_cart->execute();
+            $stmt_cart->close();
+            $stmt_customers = $db->prepare("DELETE FROM cart_auto_parts WHERE idautoparts = ?");
+            $stmt_customers->bind_param("i", $id);
+            $stmt_customers->execute();
+            $stmt_customers->close();
+
+            $db->query("ALTER TABLE history_operations_with_autoparts ADD CONSTRAINT `history_operations_with_autoparts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
+            $db->query("ALTER TABLE  cart_auto_parts ADD CONSTRAINT `cart_auto_parts_ibfk_2` FOREIGN KEY (`idautoparts`) REFERENCES `auto_parts` (`id`);");
+            // Удаление автомобиля
+            $result=$carsTable->deleteUser($id);
+
+            if ($result) {
+                // Фиксация транзакции
+                $db->commit();
+                $login = $_SESSION['login'];
+                $type_role = $_SESSION['type_role'];
+
+                // Логируем действие
+                $actStr = "Пользователь $login типа '$type_role' удалил автомобиль id=$id.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $message = 'Автомобиль успешно удалён.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка при удалении автомобиля. Возможно, он не существует.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
 
 ?>
