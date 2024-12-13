@@ -226,9 +226,13 @@ class TableFunction {
         // Обработка всех полей для поиска
         foreach ($searchableFields as $field) {
             if (isset($params[$field])) {
+                
                 //Определение типа данных на основе названия поля
                 if (stripos($field, 'id') !== false) {
                     //если в названии поля есть "id", используем целочисленный тип
+                //     $file="debug.txt";
+                // $datafile=$params['id'] ;
+                // file_put_contents($file, $datafile);
                     $conditions[] = "$field = ?";
                     $values[] = (int)$params[$field]; // Приводим к целому числу
                     $types .= 'i'; 
@@ -339,6 +343,13 @@ class TableFunction {
             return null; // Если пользователь не найден, возвращаем null
         }
     }
+
+    public function getSupplierByEmail($email) {
+        $stmt = $this->db->prepare("SELECT * FROM suppliers WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
 }
 // Подключение к базе данных
 include('server.php');
@@ -354,6 +365,11 @@ $suppliersTable = new TableFunction($db, 'suppliers');
 $inventoryTable = new TableFunction($db, 'inventory');
 $carsTable = new TableFunction($db, 'cars');
 $cartTable= new TableFunction($db, 'cart');
+$staffGarageTable= new TableFunction($db, 'staff_garage');
+$historyOperationsWithAutopartTable=new TableFunction($db, 'history_operations_with_autoparts');
+$historyOperationsWithCarsTable=new TableFunction($db, 'history_operations_with_car');
+
+$logger = new ActionLogger();
 
 // Получение количества строк для отображения
 $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
@@ -445,8 +461,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' &&isset(
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
     $garage_id = isset($_POST['garage_id']) ? trim($_POST['garage_id']) : ''; // Получаем ID гаража
-    // $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
-    // file_put_contents($file, $garage_id);
+
     if (!empty($login) && !empty($password)) 
     {
             // Проверка на существование логина
@@ -597,13 +612,13 @@ if (!empty($message)) {
     echo "<div class='$messageType'>$message</div>";
 }
 
-//удаление пользователя
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete'&& $_GET['table'] === 'users') {
-
+// Удаление пользователя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'users') {
+    
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
     // Получаем login и type_role пользователя
-    $stmt = $db->prepare("SELECT id,login, type_role FROM $selectedTable WHERE id = ?");
+    $stmt = $db->prepare("SELECT id, login, type_role FROM users WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -613,11 +628,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $login_delete_user = $row['login'];
         $type_role = $row['type_role'];
 
-        // Удаляем пользователя из таблицы users
-        if ($usersTable->deleteUser($id) === 1) {
+        // Начинаем транзакцию
+        $db->begin_transaction();
+
+        try {
+            // Удаляем пользователя из таблицы users
+            if ($usersTable->deleteUser($id) !== 1) {
+                throw new Exception("Ошибка: пользователь не найден или не удалось удалить.");
+            }
+
             $login = $_SESSION['login'];
             $id_user = $_SESSION['user_id'];
-            $type_role1=$_SESSION['type_role'];
+            $type_role1 = $_SESSION['type_role'];
 
             // Логируем действие
             $Actstr = "Пользователь $login типа '$type_role1' удалил пользователя $login_delete_user.";
@@ -632,10 +654,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
                 $result = $stmt->get_result();
                 $row = $result->fetch_assoc();
                 $id_delete_user = $row["id"];
+                
                 $stmt_cart = $db->prepare("DELETE FROM cart WHERE idcustomer = ?");
                 $stmt_cart->bind_param("i", $id_delete_user);
                 $stmt_cart->execute();
                 $stmt_cart->close();
+
                 $stmt_customers = $db->prepare("DELETE FROM customers WHERE login = ?");
                 $stmt_customers->bind_param("s", $login_delete_user);
                 $stmt_customers->execute();
@@ -648,35 +672,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
                 $result = $stmt->get_result();
                 $row = $result->fetch_assoc();
                 $id_delete_user = $row["id"];
+                
                 $stmt_staff = $db->prepare("DELETE FROM staff_garage WHERE idstaff = ?");
                 $stmt_staff->bind_param("i", $id_delete_user);
                 $stmt_staff->execute();
                 $stmt_staff->close();
+
                 $stmt_staff = $db->prepare("DELETE FROM history_operations_with_autoparts WHERE idstaff = ?");
                 $stmt_staff->bind_param("i", $id_delete_user);
                 $stmt_staff->execute();
                 $stmt_staff->close();
+
                 $stmt_staff = $db->prepare("DELETE FROM history_operations_with_car WHERE idstaff = ?");
                 $stmt_staff->bind_param("i", $id_delete_user);
                 $stmt_staff->execute();
                 $stmt_staff->close();
+
                 $stmt_staff = $db->prepare("DELETE FROM staff WHERE login = ?");
                 $stmt_staff->bind_param("s", $login_delete_user);
                 $stmt_staff->execute();
                 $stmt_staff->close();
             }
 
+            // Если все операции прошли успешно, зафиксируем транзакцию
+            $db->commit();
             $message = "Пользователь успешно удален.";
             $messageType = "success";
-        } else {
-            $message = "Ошибка: пользователь не найден или не удалось удалить.";
+        } catch (Exception $e) {
+            // В случае ошибки откатываем транзакцию
+            $db->rollback();
+            $message = $e->getMessage();
             $messageType = "error";
         }
     } else {
-        $message ="Ошибка: пользователь не найден.";
+        $message = "Ошибка: пользователь не найден.";
         $messageType = "error";
     }
-
 }
 
 //добавление запчасти
@@ -1552,6 +1583,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_customer'])) {
             // $file="debug.txt";
             // $datafile=$result3['type'];
             // file_put_contents($file, $datafile);
+                
             $result3 = $usersTable->addRecord($data2);
             // Записываем действие в журнал
             $login = $_SESSION['login'];
@@ -1723,4 +1755,620 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     }
 }
 
+
+
+
+
+// Поиск сотрудников
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_staff'])) {
+    $params = [];
+    $searchableFields = [];
+
+    // Проверка и добавление параметров
+    if (!empty($_POST['search_id'])) {
+        
+        $params['id'] = $_POST['search_id'];
+        $searchableFields[] = 'id';
+  
+    }
+
+    if (!empty($_POST['search_login'])) {
+        $params['login'] = $_POST['search_login'];
+        $searchableFields[] = 'login';
+    }
+
+    if (!empty($_POST['search_first_name'])) {
+        $params['first_name'] = $_POST['search_first_name'];
+        $searchableFields[] = 'first_name';
+    }
+
+    if (!empty($_POST['search_second_name'])) {
+        $params['second_name'] = $_POST['search_second_name'];
+        $searchableFields[] = 'second_name';
+    }
+
+    if (!empty($_POST['search_email'])) {
+        $params['email'] = $_POST['search_email'];
+        $searchableFields[] = 'email';
+    }
+
+    if (!empty($_POST['search_contact_phone'])) {
+        $params['contact_phone'] = $_POST['search_contact_phone'];
+        $searchableFields[] = 'contact_phone';
+    }
+
+    // Выполнение поиска с формированными параметрами
+    $searchResult = $staffsTable->universalSearch($params, $searchableFields);
+
+    if (!$searchResult['success']) {
+        $message = $searchResult['message'];
+        $messageType = 'error';
+    } else {
+        $staffs = $searchResult['data'];
+        if (empty($staffs)) {
+            $message = "Сотрудники не найдены.";
+            $messageType = "error"; // Ошибка
+        } 
+    }
+}
+
+// Добавление сотрудника
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_staff'])) {
+    $suc = true; // Флаг успешного выполнения
+
+    // Собираем данные из формы
+    $login = $_POST['login'];
+    $idgarage = $_POST['idgarage'];
+    $data = [
+        'first_name' => $_POST['first_name'],
+        'second_name' => $_POST['second_name'],
+        'login' => $login,
+        'contact_phone' => $_POST['contact_phone'],
+        'salary' => $_POST['salary'],
+        'idpost' => $_POST['idpost'] // ID должности
+    ];
+    
+    // Проверка и добавление email, если он установлен
+    if (isset($_POST['email']) && !empty($_POST['email'])) {
+        $data['email'] = $_POST['email'];
+    }
+
+    // Проверка уникальности логина
+    $existingUser = $staffsTable->getUserByLogin($login);
+    if ($existingUser) {
+        $message = 'Ошибка: Логин уже занят. Пожалуйста, выберите другой.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Проверка уникальности email
+    if (!empty($data['email']) && $suc) {
+        $existingEmail = $staffsTable->getUserByEmail($data['email']);
+        if ($existingEmail) {
+            $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Проверка существования должности
+    if ($suc) {
+        $stmt = $db->prepare("SELECT * FROM posts WHERE id = ?");
+        $stmt->bind_param("i", $data['idpost']);
+        $stmt->execute();
+        $result_post = $stmt->get_result();
+        if ($result_post->num_rows === 0) {
+            $message = 'Ошибка: Должность не найдена. Пожалуйста, выберите корректную должность.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Проверка диапазона idgarage
+    if ($suc) {
+        if ($idgarage > 16 || $idgarage === 14) {
+            $message = "Ошибка: Значение idgarage должно быть от 1 до 13, или от 15 до 16.";
+            $messageType = "error"; // Ошибка
+            $suc = false; // Устанавливаем флаг ошибки
+        }
+    }
+
+    // Проверка соответствия idpost и idgarage
+    if ($suc) {
+        $stmt = $db->prepare("
+            SELECT 1 
+            FROM posts p 
+            JOIN staff s ON s.idpost = p.id 
+            JOIN staff_garage sg ON sg.idstaff = s.id 
+            WHERE p.id = ? AND sg.idgarage = ?
+        ");
+        $stmt->bind_param("ii", $data['idpost'], $idgarage);
+        $stmt->execute();
+        $result_check = $stmt->get_result();
+
+        if ($result_check->num_rows === 0) {
+            $message = 'Ошибка: Комбинация должности и гаража некорректна. Пожалуйста, проверьте введенные данные.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Если все проверки пройдены, начинаем транзакцию
+    if ($suc) {
+        $db->begin_transaction(); // Начало транзакции
+
+        try {
+            // Вызов функции добавления сотрудника
+            $result = $staffsTable->addRecord($data);
+
+            // Проверяем, успешно ли добавлен сотрудник
+            if ($result) {
+                $staffId = $staffsTable->getLastInsertedId();
+                $data1 = [ 
+                    'idstaff' => $staffId,
+                    'idgarage' => $idgarage // Предполагается, что idgarage также передается в форме
+                ];
+                $result1 = $staffGarageTable->addRecord($data1);
+                $data2 = [
+                    'login' => $login,
+                    'password' => md5($_POST['password']),
+                    'type_role' => 2
+                ];
+                
+                $result2 = $usersTable->addRecord($data2);
+                
+                // Записываем действие в журнал
+                $actStr = "Пользователь {$_SESSION['login']} добавил нового сотрудника с ID=$staffId.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                if ($result1['type'] === 'success' && $result2['type'] === 'success') {
+                    $db->commit(); // Фиксация транзакции
+                    $message = 'Сотрудник добавлен успешно.';
+                    $messageType = 'success';
+                } else {
+                    throw new Exception('Ошибка: Не удалось добавить сотрудника в users или staff_garage');
+                }
+            } else {
+                throw new Exception('Ошибка: Не удалось добавить сотрудника');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+// Изменение данных сотрудника
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'staff') {
+    // Извлекаем данные из формы
+    $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $login = isset($_POST['edit_login']) ? $_POST['edit_login'] : null;
+    $firstName = isset($_POST['edit_first_name']) ? $_POST['edit_first_name'] : null;
+    $secondName = isset($_POST['edit_second_name']) ? $_POST['edit_second_name'] : null;
+    $email = isset($_POST['edit_email']) ? $_POST['edit_email'] : null;
+    $contactPhone = isset($_POST['edit_contact_phone']) ? $_POST['edit_contact_phone'] : null;
+    $salary = isset($_POST['salary']) ? $_POST['salary'] : null;
+    $idpost = isset($_POST['edit_idpost']) ? intval($_POST['edit_idpost']) : null;
+    $idgarage = isset($_POST['edit_idgarage']) ? intval($_POST['edit_idgarage']) : null;
+
+    $suc = true; // Флаг успешного выполнения
+    $id_user = null;
+
+    // Проверка на существующий логин
+    $existingUser = $staffsTable->getUserByLogin($login);
+    if ($existingUser && $existingUser['id'] != $id) { // Проверяем, что логин занят другим сотрудником
+        $message = 'Ошибка: Логин уже занят. Пожалуйста, выберите другой.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Проверка на существующий email
+    if ($email) {
+        $existingEmail = $staffsTable->getUserByEmail($email);
+        if ($existingEmail && $existingEmail['id'] != $id) { // Проверяем, что email занят другим сотрудником
+            $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Получаем старые данные сотрудника
+    if ($suc) {
+        $stmt = $db->prepare("SELECT login FROM staff WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $staff = $result->fetch_assoc();
+
+        if ($staff) {
+            $old_login = $staff['login'];
+            $user_id = $usersTable->getUserByLogin($old_login); // Получаем ID пользователя
+            if ($user_id) {
+                $id_user = $user_id['id']; // Получаем ID пользователя
+            }
+        } else {
+            $message = 'Ошибка: Сотрудник не найден.';
+            $messageType = 'error';
+            $suc = false;
+        }
+    }
+
+    if ($suc) {
+        // Подготовка данных для обновления
+        $data1 = [];
+        if ($login !== null) $data1['login'] = $login;
+        if ($firstName !== null) $data1['first_name'] = $firstName;
+        if ($secondName !== null) $data1['second_name'] = $secondName;
+        if ($email !== null) $data1['email'] = $email;
+        if ($contactPhone !== null) $data1['contact_phone'] = $contactPhone;
+        if ($salary !== null) $data1['salary'] = $salary;
+        if ($idpost !== null) $data1['idpost'] = $idpost;
+
+        // Начинаем транзакцию
+        $db->begin_transaction();
+
+        try {
+            // Инициализируем переменные результата
+            $result1 = ['type' => 'error']; // Значение по умолчанию
+            
+            // Обновление данных сотрудника, если есть что обновлять
+            if (!empty($data1)) {
+                $result1 = $staffsTable->updateRecord('staff', 'id', $id, $data1);
+            }
+            
+            // Обновление данных пользователя, если необходимо
+            if ($id_user !== null) {
+                $data2 = [];
+                if ($login !== null) $data2['login'] = $login;
+                $result2 = $usersTable->updateRecord('users', 'id', $id_user, $data2);
+            }
+
+            // Обновление данных о гараже, если указано
+            $result3 = ['type' => 'error']; // Значение по умолчанию
+            if ($idgarage !== null) {
+                $data3 = ['idgarage' => $idgarage];
+                $result3 = $staffGarageTable->updateRecord('staff_garage', 'idstaff', $id, $data3);
+            }
+
+            // Проверяем результат выполнения
+            if ($result1['type'] === 'success' || (!empty($data1) && $result3['type'] === 'success')) {
+                $db->commit(); // Фиксация транзакции
+                $login = $_SESSION['login'];
+                $type_role = $_SESSION['type_role'];
+
+                // Логируем действие
+                $actStr = "Пользователь $login типа '$type_role' изменил данные сотрудника id=$id.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $message = 'Данные сотрудника успешно изменены.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка при обновлении данных сотрудника.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+// Удаление сотрудника
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'staff') {
+
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID сотрудника для удаления    
+
+    // Создаем экземпляр класса ActionLogger
+    $logger = new ActionLogger();
+
+    // Начало транзакции
+    $logger->beginTransaction();
+
+    try {
+        // Получаем логин сотрудника по ID
+        $sql = "SELECT login FROM staff WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('i', $id); // Привязываем параметр
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $staff = $result->fetch_assoc(); 
+
+        if (!$staff) {
+            throw new Exception('Ошибка: Сотрудник не найден.');
+        }
+
+        $login_in_staff = $staff['login'];
+        $us = $usersTable->getUserByLogin($login_in_staff);
+        $user_id = $us['id'];
+
+        // Удаляем связанные записи
+        $garageDeleted = $staffGarageTable->deleteUser($id, 'idstaff');
+        $userDeleted = $usersTable->deleteUser($user_id);
+        $historyAutopartsDeleted = $historyOperationsWithAutopartTable->deleteUser($id, 'idstaff');
+        $historyCarDeleted = $historyOperationsWithCarsTable->deleteUser($id, 'idstaff');
+        $staffDeleted = $staffsTable->deleteUser($id);
+
+        // $file = "debug.txt";
+        // $datafile = [$user_id, ' ', $id, ' ', $garageDeleted, ' ', $userDeleted, ' ', $staffDeleted];
+        // file_put_contents($file, $datafile);
+
+        // Проверяем, были ли успешно удалены все записи
+        if ($garageDeleted && $userDeleted && $staffDeleted&&$historyAutopartsDeleted&&$historyCarDeleted) {
+            // Подтверждаем транзакцию
+            $logger->commit();
+
+            // Логируем действие
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role' удалил сотрудника id=$id.";
+            $logger->insertAction($id_user, $actStr);
+
+            // Сообщение об успешном удалении
+            $message = "Сотрудник успешно удален.";
+            $messageType = "success";
+        } else {
+            // Откатываем транзакцию в случае ошибки
+            $logger->rollBack();
+            $message = "Ошибка: не удалось удалить сотрудника.";
+            $messageType = "error";
+        }
+    } catch (Exception $e) {
+        // Откатываем транзакцию в случае исключения
+        $logger->rollBack();
+        $message = "Ошибка: " . $e->getMessage();
+        $messageType = "error";
+    }
+}
+
+
+
+
+
+
+
+//ПОСТАВЩИКИ
+
+// Поиск поставщика
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_supplier'])) {
+    $params = [];
+    $searchableFields = [];
+
+    // Проверка и добавление параметров
+    if (!empty($_POST['search_id'])) {
+        $params['id'] = intval($_POST['search_id']);
+        $searchableFields[] = 'id';
+    }
+
+    if (!empty($_POST['search_name_organization'])) {
+        $params['name_organization'] = $_POST['search_name_organization'];
+        $searchableFields[] = 'name_organization';
+    }
+
+    if (!empty($_POST['search_email'])) {
+        $params['email'] = $_POST['search_email'];
+        $searchableFields[] = 'email';
+    }
+
+    if (!empty($_POST['search_contact_phone'])) {
+        $params['contact_phone'] = $_POST['search_contact_phone'];
+        $searchableFields[] = 'contact_phone';
+    }
+
+    if (!empty($_POST['search_contact_person'])) {
+        $params['contact_person'] = $_POST['search_contact_person'];
+        $searchableFields[] = 'contact_person';
+    }
+
+    // Выполнение поиска с формированными параметрами
+    $searchResult = $suppliersTable->universalSearch($params, $searchableFields);
+
+    if (!$searchResult['success']) {
+        $message = $searchResult['message'];
+        $messageType = 'error';
+    } else {
+        $suppliers = $searchResult['data'];
+        if (empty($suppliers)) {
+            $message = "Поставщики не найдены.";
+            $messageType = "error"; // Ошибка
+        } 
+    }
+}
+
+// Добавление поставщика
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier'])) {
+    $suc = true; // Флаг успешного выполнения
+
+    // Собираем данные из формы
+    $data = [
+        'name_organization' => $_POST['name_organization'],
+        'email' => $_POST['email'],
+        'contact_phone' => $_POST['contact_phone'],
+        'contact_person' => $_POST['contact_person'],
+        'address' => $_POST['address'],
+    ];
+
+    // Проверка уникальности email
+    if (!empty($data['email'])) {
+        $existingEmail = $suppliersTable->getSupplierByEmail($data['email']);
+        if ($existingEmail) {
+            $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Если все проверки пройдены, начинаем транзакцию
+    if ($suc) {
+        $db->begin_transaction(); // Начало транзакции
+
+        try {
+            // Вызов функции добавления поставщика
+            $result = $suppliersTable->addRecord($data);
+
+            // Проверяем, успешно ли добавлен поставщик
+            if ($result) {
+                $supplierId = $suppliersTable->getLastInsertedId();
+
+                // Записываем действие в журнал (если необходимо)
+                $actStr = "Пользователь {$_SESSION['login']} добавил нового поставщика с ID=$supplierId.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $db->commit(); // Фиксация транзакции
+                $message = 'Поставщик добавлен успешно.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка: Не удалось добавить поставщика.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+// Изменение данных поставщика
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'suppliers') {
+    // Извлекаем данные из формы
+    $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $nameOrganization = isset($_POST['edit_name_organization']) ? $_POST['edit_name_organization'] : null;
+    $email = isset($_POST['edit_email']) ? $_POST['edit_email'] : null;
+    $contactPhone = isset($_POST['edit_contact_phone']) ? $_POST['edit_contact_phone'] : null;
+    $contactPerson = isset($_POST['edit_contact_person']) ? $_POST['edit_contact_person'] : null;
+    $address = isset($_POST['edit_address']) ? $_POST['edit_address'] : null;
+
+    $suc = true; // Флаг успешного выполнения
+
+    // Проверка на существующий email
+    if ($email) {
+        $existingEmail = $suppliersTable->getSupplierByEmail($email);
+        if ($existingEmail && $existingEmail['id'] != $id) { // Проверяем, что email занят другим поставщиком
+            $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Получаем старые данные поставщика
+    if ($suc) {
+        $stmt = $db->prepare("SELECT * FROM suppliers WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $supplier = $result->fetch_assoc();
+
+        if (!$supplier) {
+            $message = 'Ошибка: Поставщик не найден.';
+            $messageType = 'error';
+            $suc = false;
+        }
+    }
+
+    if ($suc) {
+        // Подготовка данных для обновления
+        $data = [];
+        if ($nameOrganization !== null) $data['name_organization'] = $nameOrganization;
+        if ($email !== null) $data['email'] = $email;
+        if ($contactPhone !== null) $data['contact_phone'] = $contactPhone;
+        if ($contactPerson !== null) $data['contact_person'] = $contactPerson;
+        if ($address !== null) $data['address'] = $address;
+
+        // Начинаем транзакцию
+        $db->begin_transaction();
+
+        try {
+            // Инициализируем переменные результата
+            $result = ['type' => 'error']; // Значение по умолчанию
+            
+            // Обновление данных поставщика, если есть что обновлять
+            if (!empty($data)) {
+                $result = $suppliersTable->updateRecord('suppliers', 'id', $id, $data);
+            }
+
+            // Проверяем результат выполнения
+            if ($result['type'] === 'success') {
+                $db->commit(); // Фиксация транзакции
+                $login = $_SESSION['login'];
+                $type_role = $_SESSION['type_role'];
+
+                // Логируем действие
+                $actStr = "Пользователь $login типа '$type_role' изменил данные поставщика id=$id.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $message = 'Данные поставщика успешно изменены.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка при обновлении данных поставщика.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+// Удаление поставщика
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'suppliers') {
+
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0; 
+    if($id===61){
+        $message="Нельзя удалить этого поставщика, так как когда то он уже был удалён(((";
+        $message_type="error";
+    }else{   
+    $logger = new ActionLogger();
+    // Начало транзакции
+    $logger->beginTransaction();
+
+    try {
+        $sql = "SELECT name_organization FROM suppliers WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('i', $id); 
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $supplier = $result->fetch_assoc(); 
+
+        if (!$supplier) {
+            throw new Exception('Ошибка: Поставщик не найден.');
+        }
+        $name_organization = $supplier['name_organization'];
+        
+        
+        $supplierDeleted = $suppliersTable->deleteUser($id);
+
+        $data=[
+            'idsupplier'=>61
+        ];
+        $resultcar = $carsTable->updateRecord('cars', 'idsupplier', $id, $data);
+        // Проверяем, были ли успешно удалены все записи
+        if ($supplierDeleted &&$resultcar) {
+            // Подтверждаем транзакцию
+            $logger->commit();
+
+            // Логируем действие
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role' удалил поставщика '$name_organization' (ID=$id).";
+            $logger->insertAction($id_user, $actStr);
+
+            // Сообщение об успешном удалении
+            $message = "Поставщик успешно удален.";
+            $messageType = "success";
+        } else {
+            // Откатываем транзакцию в случае ошибки
+            $logger->rollBack();
+            $message = "Ошибка: не удалось удалить поставщика.";
+            $messageType = "error";
+        }
+    } catch (Exception $e) {
+        // Откатываем транзакцию в случае исключения
+        $logger->rollBack();
+        $message = "Ошибка: " . $e->getMessage();
+        $messageType = "error";
+    }
+}
+}
 ?>

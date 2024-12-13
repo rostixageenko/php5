@@ -761,7 +761,7 @@ function changeColor(select) {
                     </div>
                     <button type="submit" class="btn" name="edit_customer">Изменить покупателя</button>
                 </form>
-                
+
                 <?php elseif ($selectedTable === 'staff'): ?>
                 <!-- Поиск сотрудников -->
                 <h2>Поиск сотрудника</h2>
@@ -800,13 +800,22 @@ function changeColor(select) {
                         <input type="text" name="login" placeholder="Логин" required>
                     </div>
                     <div class="input-group">
+                        <input type="text" name="password" placeholder="Пароль" required>
+                    </div>
+                    <div class="input-group">
                         <input type="email" name="email" placeholder="Email">
                     </div>
                     <div class="input-group">
                         <input type="text" name="contact_phone" placeholder="Контактный телефон">
                     </div>
                     <div class="input-group">
-                        <input type="text" name="idpost" placeholder="ID Должности (необязательно)">
+                        <input type="number" name="salary" placeholder="Заработная плата" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="idpost" placeholder="ID Должности"required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="idgarage" placeholder="ID гараж"required>
                     </div>
                     <button type="submit" class="btn" name="add_staff">Добавить сотрудника</button>
                 </form>
@@ -833,10 +842,85 @@ function changeColor(select) {
                         <input type="text" name="edit_contact_phone" placeholder="Контактный телефон">
                     </div>
                     <div class="input-group">
+                        <input type="text" name="salary" placeholder="Заработная плата" >
+                    </div>
+                    <div class="input-group">
                         <input type="text" name="edit_idpost" placeholder="ID Должности">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_idgarage" placeholder="ID  Гаража">
                     </div>
                     <button type="submit" class="btn" name="edit_staff">Изменить сотрудника</button>
                 </form>
+
+
+                <?php elseif ($selectedTable === 'suppliers'): ?>
+                <!-- Поиск поставщика -->
+                <h2>Поиск поставщика</h2>
+                <form method="POST" action="?table=suppliers&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_id" placeholder="ID поставщика (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_name_organization" placeholder="Название организации (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="search_email" placeholder="Email (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_contact_phone" placeholder="Телефон (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_contact_person" placeholder="Контактное лицо (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_supplier">Поиск поставщика</button>
+                </form>
+
+                <!-- Добавление поставщика -->
+                <h2>Добавить поставщика</h2>
+                <form method="POST" action="?table=suppliers" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="name_organization" placeholder="Название организации" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="contact_phone" placeholder="Контактный телефон" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="contact_person" placeholder="Контактное лицо">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="address" placeholder="Адрес">
+                    </div>
+                    <button type="submit" class="btn" name="add_supplier">Добавить поставщика</button>
+                </form>
+
+                <!-- Изменение данных поставщика -->
+                <h2>Изменить данные поставщика</h2>
+                <form method="POST" action="?table=suppliers&action=edit">
+                    <div class="input-group">
+                        <input type="text" name="edit_id" placeholder="ID поставщика" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_name_organization" placeholder="Название организации">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="edit_email" placeholder="Email">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_contact_phone" placeholder="Контактный телефон">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_contact_person" placeholder="Контактное лицо">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_address" placeholder="Адрес">
+                    </div>
+                    <button type="submit" class="btn" name="edit_supplier">Изменить поставщика</button>
+                </form>
+
             <?php else: ?>
 
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
@@ -893,7 +977,7 @@ function changeColor(select) {
                         break;
                 
                     case 'suppliers':
-                        if (!isset($_POST['search_suppliers']) && !isset($_POST['sort_table'])) {
+                        if (!isset($_POST['search_supplier']) && !isset($_POST['sort_table'])) {
                             $suppliers = $suppliersTable->fetchLimited($rowCount);
                         }
                         $suppliersTable->renderTable($suppliers, 'Поставщики');
