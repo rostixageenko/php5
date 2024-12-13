@@ -921,6 +921,154 @@ function changeColor(select) {
                     <button type="submit" class="btn" name="edit_supplier">Изменить поставщика</button>
                 </form>
 
+                <?php elseif ($selectedTable === 'cars'): ?>
+                <!-- Поиск автомобиля -->
+                <h2>Поиск автомобиля</h2>
+                <form method="POST" action="?table=cars&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_id" placeholder="ID автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_brand" placeholder="Марка автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_model" placeholder="Модель автомобиля (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_year_start" placeholder="с какого года (необязательно)" 
+                            pattern="\d{4}" title="Введите 4 цифры (например, 2023)" 
+                            min="1900" max="<?php echo date('Y'); ?>" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_year_end" placeholder="до какого года (необязательно)" 
+                            pattern="\d{4}" title="Введите 4 цифры (например, 2023)" 
+                            min="1900" max="<?php echo date('Y'); ?>" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_VIN" placeholder="VIN номер (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_car">Поиск автомобиля</button>
+                </form>
+
+                <!-- Добавление автомобиля -->
+                <h2>Добавить автомобиль</h2>
+                <form method="POST" action="?table=cars" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="brand" placeholder="Марка автомобиля" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="model" placeholder="Модель автомобиля" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="year_production" placeholder="Год производства" required min="1886" max="<?php echo date('Y'); ?>">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="VIN_number" placeholder="VIN номер" required maxlength="17">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="purchase_price" placeholder="Цена покупки" required>
+                    </div>
+                    <div class="input-group">
+                        <textarea name="condition" placeholder="Состояние ( необязательно)"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="idgarage" placeholder="ID гаража" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="idsupplier" placeholder="ID поставщика" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="mileage" placeholder="Пробег" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="engine_volume" placeholder="Объем двигателя (л)">
+                    </div>
+                    <div class="input-group">
+                        <label for="fuel_type">Тип топлива:</label>
+                        <select name="fuel_type" id="fuel_type" onchange="changeColor(this)" required>
+                            <option value="">Выберите тип топлива</option>
+                            <option value="бензин">Бензин</option>
+                            <option value="дизель">Дизель</option>
+                            <option value="газ">Газ</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="transmission_type">Тип трансмиссии:</label>
+                        <select name="transmission_type" id="transmission_type" onchange="changeColor(this)" required>
+                            <option value="">Выберите тип трансмиссии</option>
+                            <option value="механика">Механика</option>
+                            <option value="автомат">Автомат</option>
+                            <option value="робот">Робот</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="body_type">Тип кузова:</label>
+                        <select name="body_type" id="body_type"  onchange="changeColor(this)" required>
+                            <option value="">Выберите тип кузова</option>
+                            <option value="седан">Седан</option>
+                            <option value="кроссовер">Кроссовер</option>
+                            <option value="хэтчбек">Хэтчбек</option>
+                            <option value="купэ">Купэ</option>
+                            <option value="универсал">Универсал</option>
+                            <option value="SUV">SUV</option>
+                            <option value="пикап">Пикап</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" name="add_car">Добавить автомобиль</button>
+                </form>
+
+                <!-- Изменение данных автомобиля -->
+                <h2>Изменить данные автомобиля</h2>
+                <form method="POST" action="?table=cars&action=edit">
+                    <div class="input-group">
+                        <input type="text" name="edit_id" placeholder="ID автомобиля" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_brand" placeholder="Марка автомобиля">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_model" placeholder="Модель автомобиля">
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="edit_year_production" placeholder="Год производства">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_VIN_number" placeholder="VIN номер" maxlength="17">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_purchase_price" placeholder="Цена покупки">
+                    </div>
+                    <div class="input-group">
+                        <textarea name="edit_condition" placeholder="Состояние (в формате JSON, необязательно)"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="edit_idgarage" placeholder="ID гаража">
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="edit_idsupplier" placeholder="ID поставщика">
+                    </div>
+                    <div class="input-group">
+                        <input type="number" name="edit_mileage" placeholder="Пробег">
+                    </div>
+                    <div class="input-group">
+                        <input type="datetime-local" name="edit_date_receipt" placeholder="Дата поступления">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_engine_volume" placeholder="Объем двигателя (л)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_fuel_type" placeholder="Тип топлива">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_transmission_type" placeholder="Тип трансмиссии">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_body_type" placeholder="Тип кузова">
+                    </div>
+                    <button type="submit" class="btn" name="edit_car">Изменить автомобиль</button>
+                </form>
+
+
             <?php else: ?>
 
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
@@ -984,7 +1132,7 @@ function changeColor(select) {
                         break;
                 
                     case 'cars':
-                        if (!isset($_POST['search_cars']) && !isset($_POST['sort_table'])) {
+                        if (!isset($_POST['search_car']) && !isset($_POST['sort_table'])) {
                             $cars = $carsTable->fetchLimited($rowCount);
                         }
                         $carsTable->renderTable($cars, 'Автомобили');

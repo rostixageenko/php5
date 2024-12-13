@@ -56,7 +56,7 @@ class TableFunction {
 
         if ($stmt->execute()) {
             return [
-                'message' => 'Запчасть успешно изменена.',
+                'message' => ' успешно изменена.',
                 'type' => 'success'
             ];
         } else {
@@ -230,9 +230,7 @@ class TableFunction {
                 //Определение типа данных на основе названия поля
                 if (stripos($field, 'id') !== false) {
                     //если в названии поля есть "id", используем целочисленный тип
-                //     $file="debug.txt";
-                // $datafile=$params['id'] ;
-                // file_put_contents($file, $datafile);
+               
                     $conditions[] = "$field = ?";
                     $values[] = (int)$params[$field]; // Приводим к целому числу
                     $types .= 'i'; 
@@ -248,8 +246,13 @@ class TableFunction {
 
         // Проверка диапазона дат
         foreach ($dateFields as $field) {
+
             $startDate = $params[$field . '_start'] ?? null;
             $endDate = $params[$field . '_end'] ?? null;
+
+            // $file="debug.txt";
+            // $datafile=  $params['year_production_start'];
+            // file_put_contents($file, $datafile);
 
             if (!empty($startDate) && !empty($endDate)) {
                 // Проверка, что конечная дата не раньше начальной
@@ -350,6 +353,41 @@ class TableFunction {
         $stmt->execute();
         return $stmt->get_result()->fetch_assoc();
     }
+
+    public function getCarByVIN($vin) {
+        // Подготовка SQL-запроса для проверки существования VIN
+        $stmt = $this->db->prepare("SELECT * FROM cars WHERE VIN_number = ?");
+        $stmt->bind_param('s', $vin); // Привязываем параметр
+    
+        // Выполнение запроса
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        // Проверяем, был ли найден автомобиль
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc(); // Возвращаем ассоциативный массив с данными автомобиля
+        } else {
+            return null; // Если автомобиль не найден, возвращаем null
+        }
+    }
+
+    public function getSupplierById($id) {
+        // Подготовка SQL-запроса для проверки существования поставщика
+        $stmt = $this->db->prepare("SELECT * FROM suppliers WHERE id = ?");
+        $stmt->bind_param('i', $id); // Привязываем параметр
+    
+        // Выполнение запроса
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        // Проверяем, был ли найден поставщик
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc(); // Возвращаем ассоциативный массив с данными поставщика
+        } else {
+            return null; // Если поставщик не найден, возвращаем null
+        }
+    }
+    
 }
 // Подключение к базе данных
 include('server.php');
@@ -2371,4 +2409,176 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     }
 }
 }
+
+
+
+
+
+
+//АВТОМОБИЛИ
+
+// Поиск автомобилей
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_car'])) {
+    $params = [];
+    $searchableFields = [];
+    $suc=true;
+    // Проверка и добавление параметров
+    if (!empty($_POST['search_id'])) {
+        $params['id'] = $_POST['search_id'];
+        $searchableFields[] = 'id';
+    }
+
+    if (!empty($_POST['search_brand'])) {
+        $params['brand'] = $_POST['search_brand'];
+        $searchableFields[] = 'brand';
+    }
+
+    if (!empty($_POST['search_model'])) {
+        $params['model'] = $_POST['search_model'];
+        $searchableFields[] = 'model';
+    }
+    if (!empty($_POST['search_year_start']) && ($_POST['search_year_start'] < 1900 || $_POST['search_year_start'] > date('Y'))) {
+        $message = "Ошибка: Год начала должен быть между 1900 и " . date('Y') . ".";
+        $messageType = "error";
+        $suc=false;
+    }
+    
+    if (!empty($_POST['search_year_end']) && ($_POST['search_year_end'] < 1900 || $_POST['search_year_end'] > date('Y'))) {
+        $message = "Ошибка: Год окончания должен быть между 1900 и " . date('Y') . ".";
+        $messageType = "error";
+        $suc=false;
+    }
+    if (!empty($_POST['search_year_start'])&&$suc) {
+        
+        $params['year_production_start'] = $_POST['search_year_start'];
+    
+        // $file="debug.txt";
+        // $datafile=  $params['year_production_start'];
+        // file_put_contents($file, $datafile);
+    }
+
+    if (!empty($_POST['search_year_end'])&&$suc) {
+        $params['year_production_end'] = $_POST['search_year_end'];
+    }
+
+    if (!empty($_POST['search_VIN'])&&$suc) {
+        $params['VIN_number'] = $_POST['search_VIN'];
+        $searchableFields[] = 'VIN_number';
+    }
+
+    // Поля для проверки диапазона годов
+    if($suc){
+        $yearFields = ['year_production']; // Укажите поле года, по которому будет выполняться поиск
+
+    // Выполнение поиска с формированными параметрами
+    $searchResult = $carsTable->universalSearch($params, $searchableFields, $yearFields);
+
+    if (!$searchResult['success']) {
+        $message = $searchResult['message'];
+        $messageType = 'error';
+    } else {
+        $cars = $searchResult['data'];
+        if (empty($cars)) {
+            $message = "Автомобили не найдены.";
+            $messageType = "error"; // Ошибка
+        } 
+    }
+}
+}
+
+// Добавление автомобиля
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_car'])) {
+    $suc = true; // Флаг успешного выполнения
+
+    // Собираем данные из формы
+    $data = [
+        'brand' => $_POST['brand'],
+        'model' => $_POST['model'],
+        'year_production' => $_POST['year_production'],
+        'VIN_number' => $_POST['VIN_number'],
+        'purchase_price' => $_POST['purchase_price'],
+        '`condition`' => isset($_POST['condition']) ? json_encode($_POST['condition'], JSON_UNESCAPED_UNICODE) : null, // Конвертация в JSON с поддержкой русских символов
+        'idgarage' => $_POST['idgarage'],
+        'idsupplier' => $_POST['idsupplier'],
+        'mileage' => $_POST['mileage'] ?? null,
+        'engine_volume' => $_POST['engine_volume'] ?? null,
+        'fuel_type' => $_POST['fuel_type'] ?? null,
+        'transmission_type' => $_POST['transmission_type'] ?? null,
+        'body_type' => $_POST['body_type'] ?? null,
+    ];
+
+    // Проверка уникальности VIN номера
+    if (!empty($data['VIN_number'])) {
+        $existingVIN = $carsTable->getCarByVIN($data['VIN_number']);
+        if ($existingVIN) {
+            $message = 'Ошибка: VIN номер уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Проверка существования поставщика
+    $existingSupplier = $suppliersTable->getSupplierById($data['idsupplier']);
+    if (!$existingSupplier) {
+        $message = 'Ошибка: Поставщик с указанным ID не найден.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Проверка idgarage
+    if (!isset($data['idgarage']) || $data['idgarage'] < 1 || $data['idgarage'] > 4) {
+        $message = 'Ошибка: ID гаража должен быть от 1 до 4.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    if ($suc) {
+        $stmt = $db->prepare("
+            SELECT 1 FROM garage g 
+            JOIN garage_car_brands gcb ON g.id = gcb.idgarage
+            JOIN car_brands cb ON gcb.idcar_brands = cb.id
+            WHERE name_brand = ? AND idgarage = ?;
+        ");
+        $stmt->bind_param("si", $data['brand'], $data['idgarage']);
+        $stmt->execute();
+        $result_check = $stmt->get_result();
+
+        if ($result_check->num_rows === 0) {
+            $message = 'Ошибка: Комбинация марки и гаража некорректна. Пожалуйста, проверьте введенные данные.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+
+    // Если все проверки пройдены, начинаем транзакцию
+    if ($suc) {
+        $db->begin_transaction(); // Начало транзакции
+
+        try {
+            // Вызов функции добавления автомобиля
+            $result = $carsTable->addRecord($data);
+
+            // Проверяем, успешно ли добавлен автомобиль
+            if ($result) {
+                $carId = $carsTable->getLastInsertedId();
+
+                // Записываем действие в журнал (если необходимо)
+                $actStr = "Пользователь {$_SESSION['login']} добавил новый автомобиль с ID=$carId.";
+                $dbExecutor->insertAction($_SESSION['user_id'], $actStr);
+
+                $db->commit(); // Фиксация транзакции
+                $message = 'Автомобиль добавлен успешно.';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Ошибка: Не удалось добавить автомобиль.');
+            }
+        } catch (Exception $e) {
+            $db->rollback(); // Откат транзакции
+            $message = $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
+
 ?>
