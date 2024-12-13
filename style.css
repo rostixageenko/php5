@@ -430,3 +430,7 @@ select:hover {
   color: gray; /* Цвет значка */
   position: absolute; /* Позволяет центровать иконку внутри рамки */
 }
+
+/* *{
+  border: 1px solid #dc3545;
+} */

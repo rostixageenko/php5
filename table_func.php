@@ -86,14 +86,19 @@ class TableFunction {
         }
     }
 
-    public function deleteUser($id) {
-        $stmt = $this->db->prepare("DELETE FROM " . $this->tableName . " WHERE id = ?");
-        $stmt->bind_param("i", $id);
+    public function deleteUser($value, $field = 'id') {
+        // Создаем SQL-запрос с динамическим полем
+        $stmt = $this->db->prepare("DELETE FROM " . $this->tableName . " WHERE " . $field . " = ?");
+        
+        // Определяем тип параметра
+        $paramType = is_int($value) ? "i" : "s"; // "i" для integer, "s" для string
+        $stmt->bind_param($paramType, $value);
+    
         try {
             if ($stmt->execute() && $stmt->affected_rows > 0) {
-                return 1;
+                return 1; // Удаление прошло успешно
             } else {
-                return 0;
+                return 0; // Удаление не произошло (пользователь не найден)
             }
         } catch (mysqli_sql_exception $e) {
             return "Ошибка удаления пользователя: " . $e->getMessage();
@@ -212,117 +217,127 @@ class TableFunction {
         }
     }
 
-     // Универсальный метод поиска
-     public function universalSearch($params, $searchableFields, $dateFields = []) 
-     {
-         $conditions = [];
-         $values = [];
-         $types = ''; // Строка для хранения типов данных
-     
-         // Обработка всех полей для поиска
-         foreach ($searchableFields as $field) {
-             if (!empty($params[$field])) {
-                 if ($field === 'purchase_price') {
-                     // Для стоимости используем строгое равенство
-                     $conditions[] = "$field = ?";
-                     $values[] = $params[$field]; // Значение остается как строка
-                     $types .= 's'; // Добавляем тип строки
-                 } else {
-                     // Для остальных полей используем LIKE
-                     $conditions[] = "$field LIKE ?";
-                     $values[] = '%' . $params[$field] . '%';
-                     $types .= 's'; // Добавляем тип строки для всех строковых полей, включая ENUM
-                 }
-             }
-         }
-     
-         // Проверка диапазона дат
-         foreach ($dateFields as $field) {
-             $startDate = $params[$field . '_start'] ?? null;
-             $endDate = $params[$field . '_end'] ?? null;
-     
-             if (!empty($startDate) && !empty($endDate)) {
-                 // Проверка, что конечная дата не раньше начальной
-                 if ($startDate > $endDate) {
-                     return [
-                         'success' => false,
-                         'message' => 'Ошибка: конечная дата не может быть раньше начальной.'
-                     ]; // Если ошибка, возвращаем сообщение
-                 }
-                 $conditions[] = "$field >= ?";
-                 $values[] = $startDate;
-                 $types .= 's'; // Дата считается строкой для MySQL
-     
-                 $conditions[] = "$field <= ?";
-                 $values[] = $endDate;
-                 $types .= 's'; // Дата считается строкой для MySQL
-             } elseif (!empty($startDate)) {
-                 $conditions[] = "$field >= ?";
-                 $values[] = $startDate;
-                 $types .= 's'; // Дата считается строкой для MySQL
-             } elseif (!empty($endDate)) {
-                 $conditions[] = "$field <= ?";
-                 $values[] = $endDate;
-                 $types .= 's'; // Дата считается строкой для MySQL
-             }
-         }
-     
-         // Определение типов для целочисленных параметров
-         if (isset($params['search_order_id']) && !empty($params['search_order_id'])) {
-             $conditions[] = 'id = ?';
-             $values[] = (int)$params['search_order_id'];
-             $types .= 'i'; // Добавляем тип целого числа
-         }
-     
-         if (isset($params['search_id_customer']) && !empty($params['search_id_customer'])) {
-             $conditions[] = 'idcustomer = ?';
-             $values[] = (int)$params['search_id_customer'];
-             $types .= 'i'; // Добавляем тип целого числа
-         }
-     
-         // Добавляем проверки для ENUM полей
-         if (isset($params['search_status']) && !empty($params['search_status'])) {
-             $conditions[] = 'status = ?';
-             $values[] = $params['search_status'];
-             $types .= 's'; // Строка для ENUM
-         }
-     
-         if (isset($params['search_type_order']) && !empty($params['search_type_order'])) {
-             $conditions[] = 'type_order = ?';
-             $values[] = $params['search_type_order'];
-             $types .= 's'; // Строка для ENUM
-         }
-     
-         // Формирование SQL-запроса
-         $sql = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
-         if (!empty($conditions)) {
-             $sql .= " WHERE " . implode(' AND ', $conditions);
-         }
-     
-         // Подготовка и выполнение запроса
-         $stmt = $this->db->prepare($sql);
-     
-         // Проверка наличия значений для привязки
-         if (!empty($values)) {
-             $stmt->bind_param($types, ...$values); // Подготовка параметров
-         }
-     
-         if ($stmt->execute()) {
-             $result = $stmt->get_result();
-             return [
-                 'success' => true,
-                 'data' => $result->fetch_all(MYSQLI_ASSOC) // Получаем массив всех результатов
-             ];
-         } else {
-             return [
-                 'success' => false,
-                 'message' => 'Ошибка: ' . $stmt->error
-             ];
-         }
-     }
-     public function getLastInsertedId() {
+    public function universalSearch($params, $searchableFields, $dateFields = []) 
+    {
+        $conditions = [];
+        $values = [];
+        $types = ''; // Строка для хранения типов данных
+        
+        // Обработка всех полей для поиска
+        foreach ($searchableFields as $field) {
+            if (isset($params[$field])) {
+                //Определение типа данных на основе названия поля
+                if (stripos($field, 'id') !== false) {
+                    //если в названии поля есть "id", используем целочисленный тип
+                    $conditions[] = "$field = ?";
+                    $values[] = (int)$params[$field]; // Приводим к целому числу
+                    $types .= 'i'; 
+                    // Тип целого числа
+                } else {
+                    // Для остальных полей используем строковый тип
+                    $conditions[] = "$field = ?";
+                    $values[] = (string)$params[$field]; // Приводим к строке
+                    $types .= 's'; // Тип строки
+                }
+            }
+        }
+
+        // Проверка диапазона дат
+        foreach ($dateFields as $field) {
+            $startDate = $params[$field . '_start'] ?? null;
+            $endDate = $params[$field . '_end'] ?? null;
+
+            if (!empty($startDate) && !empty($endDate)) {
+                // Проверка, что конечная дата не раньше начальной
+                if ($startDate > $endDate) {
+                    return [
+                        'success' => false,
+                        'message' => 'Ошибка: конечная дата не может быть раньше начальной.'
+                    ]; // Если ошибка, возвращаем сообщение
+                }
+                $conditions[] = "$field >= ?";
+                $values[] = $startDate;
+                $types .= 's'; // Дата считается строкой для MySQL
+
+                $conditions[] = "$field <= ?";
+                $values[] = $endDate;
+                $types .= 's'; // Дата считается строкой для MySQL
+            } elseif (!empty($startDate)) {
+                $conditions[] = "$field >= ?";
+                $values[] = $startDate;
+                $types .= 's'; // Дата считается строкой для MySQL
+            } elseif (!empty($endDate)) {
+                $conditions[] = "$field <= ?";
+                $values[] = $endDate;
+                $types .= 's'; // Дата считается строкой для MySQL
+            }
+        }
+
+        // Формирование SQL-запроса
+        $sql = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $conditions);
+        }
+
+        // Подготовка и выполнение запроса
+        $stmt = $this->db->prepare($sql);
+
+        // Проверка наличия значений для привязки
+        if (!empty($values)) {
+            $stmt->bind_param($types, ...$values); // Подготовка параметров
+        }
+
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            return [
+                'success' => true,
+                'data' => $result->fetch_all(MYSQLI_ASSOC) // Получаем массив всех результатов
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Ошибка: ' . $stmt->error
+            ];
+        }
+    }
+    public function getLastInsertedId() {
         // Получаем ID последней вставленной записи
         return $this->db->insert_id;
+    }
+
+    public function getUserByLogin($login) {
+        $sql = "SELECT * FROM users WHERE login = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $login); // Привязываем параметр
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc(); // Возвращаем ассоциативный массив
+    }
+
+    // Метод для получения пользователя по email
+    public function getUserByEmail($email) {
+        // Подготовка SQL-запроса
+        $sql = "SELECT * FROM customers WHERE email = ?";
+        
+        // Подготовка и выполнение запроса
+        $stmt = $this->db->prepare($sql);
+        if ($stmt === false) {
+            throw new Exception('Ошибка подготовки SQL-запроса: ' . $this->db->error);
+        }
+
+        // Привязываем параметр
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        
+        // Получаем результат
+        $result = $stmt->get_result();
+        
+        // Проверяем, найден ли пользователь
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc(); // Возвращаем данные пользователя как ассоциативный массив
+        } else {
+            return null; // Если пользователь не найден, возвращаем null
+        }
     }
 }
 // Подключение к базе данных
@@ -333,11 +348,12 @@ $selectedTable = isset($_GET['table']) ? $_GET['table'] : 'users';
 $usersTable = new TableFunction($db, 'users');
 $partsTable = new TableFunction($db, 'auto_parts');
 $ordersTable = new TableFunction($db, 'orders');
-$customersTable = new TableFunction($db, 'Customers');
-$staffsTable = new TableFunction($db, 'Staff');
+$customersTable = new TableFunction($db, 'customers');
+$staffsTable = new TableFunction($db, 'staff');
 $suppliersTable = new TableFunction($db, 'suppliers');
-$inventoryTable = new TableFunction($db, 'Inventory');
-$carsTable = new TableFunction($db, 'Cars');
+$inventoryTable = new TableFunction($db, 'inventory');
+$carsTable = new TableFunction($db, 'cars');
+$cartTable= new TableFunction($db, 'cart');
 
 // Получение количества строк для отображения
 $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // По умолчанию 25 строк
@@ -587,7 +603,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
     // Получаем login и type_role пользователя
-    $stmt = $db->prepare("SELECT login, type_role FROM $selectedTable WHERE id = ?");
+    $stmt = $db->prepare("SELECT id,login, type_role FROM $selectedTable WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -1260,24 +1276,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         $messageType = 'error'; // Ошибка
     }
 }
+
+
 //поиск заказов
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_order'])) {
     $params = [];
     $searchableFields = [];
     
     // Проверка и добавление параметров
-    if (!empty($_POST['search_order_id'])) {
-        $params['search_order_id'] = $_POST['search_order_id'];
+    if (!empty($_POST['search_id'])) {
+        // $file="debug.txt";
+        // $datafile="zaebis6";
+        // file_put_contents($file, $datafile);
+        $params['id'] = $_POST['search_id'];
         $searchableFields[] = 'id';
     }
 
     if (!empty($_POST['search_type_order'])) {
-        $params['search_type_order'] = $_POST['search_type_order'];
+        $params['type_order'] = $_POST['search_type_order'];
         $searchableFields[] = 'type_order';
     }
 
     if (!empty($_POST['search_status'])) {
-        $params['search_status'] = $_POST['search_status'];
+        $params['status'] = $_POST['search_status'];
         $searchableFields[] = 'status';
     }
 
@@ -1292,12 +1313,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_order'])) {
     }
 
     if (!empty($_POST['search_purchase_price'])) {
-        $params['search_purchase_price'] = $_POST['search_purchase_price'];
+        $params['purchase_price'] = $_POST['search_purchase_price'];
         $searchableFields[] = 'purchase_price';
     }
 
     if (!empty($_POST['search_id_customer'])) {
-        $params['search_id_customer'] = $_POST['search_id_customer'];
+        $params['id_customer'] = $_POST['search_id_customer'];
         $searchableFields[] = 'idcustomer';
     }
 
@@ -1316,11 +1337,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_order'])) {
             $message = "Заказы не найдены.";
             $messageType = "error"; // Ошибка
          } 
-        //else {
-        //     $message = ""; // Очистка сообщения, если нашли заказы
-        //     // Здесь можно вызвать renderTable, если данные корректны
-        //     $ordersTable->renderTable($orders, 'Результаты поиска заказов');
-        // }
     }
 }
 
@@ -1354,6 +1370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     }
 }
 
+//изменение заказа
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'orders') {
     // Извлекаем данные из формы
     $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
@@ -1417,4 +1434,293 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $stmt->close(); // Закрываем подготовленный запрос
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Поиск покупателей
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_customer'])) {
+    $params = [];
+    $searchableFields = [];
+
+    // Проверка и добавление параметров
+    if (!empty($_POST['search_id'])) {
+        $params['id'] = $_POST['search_id'];
+        $searchableFields[] = 'id';
+ 
+    }
+
+    if (!empty($_POST['search_login'])) {
+        $params['login'] = $_POST['search_login'];
+        $searchableFields[] = 'login';
+    }
+
+    if (!empty($_POST['search_first_name'])) {
+        $params['first_name'] = $_POST['search_first_name'];
+        $searchableFields[] = 'first_name';
+    }
+
+    if (!empty($_POST['search_second_name'])) {
+        $params['name'] = $_POST['search_second_name'];
+        $searchableFields[] = 'second_name';
+    }
+
+    if (!empty($_POST['search_email'])) {
+        $params['email'] = $_POST['search_email'];
+        $searchableFields[] = 'email';
+    }
+
+    if (!empty($_POST['search_contact_phone'])) {
+        $params['contact_phone'] = $_POST['search_contact_phone'];
+        $searchableFields[] = 'contact_phone';
+    }
+
+    // Выполнение поиска с формированными параметрами
+    $searchResult = $customersTable->universalSearch($params, $searchableFields);
+
+    if (!$searchResult['success']) {
+        $message = $searchResult['message'];
+        $messageType = 'error';
+    } else {
+        $customers = $searchResult['data'];
+        if (empty($customers)) {
+            $message = "Покупатели не найдены.";
+            $messageType = "error"; // Ошибка
+        } 
+    }
+}
+
+// Добавление покупателя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_customer'])) {
+    $suc = true; // Флаг успешного выполнения
+    $type_role = 0;
+
+    // Собираем данные из формы
+    $login = $_POST['login'];
+    $data1 = [
+        'login' => $login,
+        'first_name' => $_POST['first_name'],
+        'second_name' => $_POST['second_name'],
+        'email' => $_POST['email'],
+        'contact_phone' => $_POST['contact_phone'],
+        'address' => $_POST['address']
+    ];
+    
+    $data2 = [
+        'login' => $login,
+        'password' => md5($_POST['password']),
+        'type_role' => $type_role
+    ];
+
+    // Проверка уникальности логина
+    $existingUser = $customersTable->getUserByLogin($login); 
+    if ($existingUser) {
+        $message = 'Ошибка: Логин уже занят. Пожалуйста, выберите другой.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Проверка уникальности email
+    $existingEmail = $customersTable->getUserByEmail($data1['email']); 
+    if ($existingEmail) {
+        $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Если логин и email уникальны, добавляем пользователя
+    if ($suc) {
+        // Вызов функции добавления покупателя
+        $result1 = $customersTable->addRecord($data1);
+        
+        // Если покупатель успешно добавлен
+        if ($result1 ) {
+            // Получаем ID созданного покупателя
+            $customerId = $customersTable->getLastInsertedId(); 
+            $data3=['idcustomer'=>$customerId];
+            
+            $result2 =$cartTable->addRecord($data3);
+            // $file="debug.txt";
+            // $datafile=$result3['type'];
+            // file_put_contents($file, $datafile);
+            $result3 = $usersTable->addRecord($data2);
+            // Записываем действие в журнал
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $actStr = "Пользователь $login добавил нового покупателя с ID=$customerId.";
+            $dbExecutor->insertAction($id_user, $actStr);
+            if($result2['type']==='success'&&$result3['type']==='success'){
+            $message = 'Покупатель добавлен успешно';
+            $messageType = 'success'; // Успешное сообщение
+            }else{
+                $message = 'Ошибка: Не удалось добавить покупателя в users или cart';
+            $messageType = 'error';
+            }
+        } else {
+            $message = 'Ошибка: Не удалось добавить покупателя';
+            $messageType = 'error'; 
+        }
+    }
+}
+
+// Изменение покупателя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'customers') {
+    // Извлекаем данные из формы
+    $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $login = isset($_POST['edit_login']) ? $_POST['edit_login'] : null;
+    $firstName = isset($_POST['edit_first_name']) ? $_POST['edit_first_name'] : null;
+    $secondName = isset($_POST['edit_second_name']) ? $_POST['edit_second_name'] : null;
+    $email = isset($_POST['edit_email']) ? $_POST['edit_email'] : null;
+    $contactPhone = isset($_POST['edit_contact_phone']) ? $_POST['edit_contact_phone'] : null;
+    $address = isset($_POST['edit_address']) ? $_POST['edit_address'] : null;
+
+    $suc = true; // Флаг успешного выполнения
+    $id_users = null;
+
+    // Проверка на существующий логин
+    $existingUser = $customersTable->getUserByLogin($login); // Предполагаем, что этот метод существует
+    if ($existingUser) {
+        $message = 'Ошибка: Логин уже занят. Пожалуйста, выберите другой.';
+        $messageType = 'error'; // Ошибка
+        $suc = false; // Устанавливаем флаг на false
+    }
+
+    // Проверка на существующий email
+    if(isset($email)){
+    $existingEmail = $customersTable->getUserByEmail($email); 
+        if ($existingEmail &&$suc) {
+            $message = 'Ошибка: Email уже занят. Пожалуйста, выберите другой.';
+            $messageType = 'error'; // Ошибка
+            $suc = false; // Устанавливаем флаг на false
+        }
+    }
+    
+    if ($login !== null && $suc) {
+        // Запрос для получения ID пользователя по логину
+        $sql = "SELECT login FROM customers WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('i', $id); // Привязываем параметр
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // Извлекаем ассоциативный массив
+        $customer = $result->fetch_assoc(); 
+        
+        // Проверяем, что пользователь найден
+        if ($customer) {
+            $old_login = $customer['login']; // Получаем старый логин
+            $user_id = $usersTable->getUserByLogin($old_login); // Предполагаем, что этот метод существует
+            
+            if ($user_id) { // Проверяем, что пользователь найден
+                $id_users = $user_id['id']; // Получаем ID пользователя
+            }
+        }
+    }
+
+    if ($suc) {
+        // Подготовка данных для обновления
+        $data1 = [];
+        if ($login !== null) $data1['login'] = $login;
+        if ($firstName !== null) $data1['first_name'] = $firstName;
+        if ($secondName !== null) $data1['second_name'] = $secondName;
+        if ($email !== null) $data1['email'] = $email;
+        if ($contactPhone !== null) $data1['contact_phone'] = $contactPhone;
+        if ($address !== null) $data1['address'] = $address;
+
+
+        // Вызываем функцию для обновления данных
+        $result1 = $customersTable->updateRecord('customers', 'id', $id, $data1);
+        if ($id_users !== null) {
+            $data2=[];
+            $data2['login'] = $login;
+            $result2 = $usersTable->updateRecord('users', 'id', $id_users, $data2);
+        }
+
+        // Проверяем результат выполнения
+        if ($result1['type'] === 'success') {
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+
+            // Логируем действие
+            $actStr = "Пользователь $login типа '$type_role' изменил данные покупателя id=$id.";
+            $dbExecutor->insertAction($id_user, $actStr);
+        }
+
+        // Устанавливаем сообщение для пользователя
+        $message = $result1['message'];
+        $messageType = $result1['type'];
+    }
+}
+
+
+// Удаление покупателя
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete' && $_GET['table'] === 'customers') {
+
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID покупателя для удаления    
+
+    // Создаем экземпляр класса ActionLogger
+    $logger = new ActionLogger();
+
+    // Начало транзакции
+    $logger->beginTransaction();
+
+    try {
+
+        $sql = "SELECT login FROM customers WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param('i', $id); // Привязываем параметр
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $customer = $result->fetch_assoc(); 
+        $login_in_customers = $customer['login'];
+        $us = $usersTable->getUserByLogin($login_in_customers);
+        $user_id=$us['id'];
+
+        $cartDeleted = $cartTable->deleteUser($id, 'idcustomer');
+
+        $userDeleted = $usersTable->deleteUser($user_id);
+        
+        $customerDeleted = $customersTable->deleteUser($id);
+            $file="debug.txt";
+            $datafile=[$user_id,' ',$id,' ',$cartDeleted,' ',$userDeleted,' ',$customerDeleted];
+            file_put_contents($file, $datafile);
+        // Проверяем, были ли успешно удалены все записи
+        if ($cartDeleted && $userDeleted && $customerDeleted) {
+            // Подтверждаем транзакцию
+            $logger->commit();
+
+            // Логируем действие
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role' удалил покупателя id=$id.";
+            $logger->insertAction($id_user, $actStr);
+
+            // Сообщение об успешном удалении
+            $message = "Покупатель успешно удален.";
+            $messageType = "success";
+        } else {
+            // Откатываем транзакцию в случае ошибки
+            $logger->rollBack();
+            $message = "Ошибка: не удалось удалить покупателя.";
+            $messageType = "error";
+        }
+    } catch (Exception $e) {
+        // Откатываем транзакцию в случае исключения
+        $logger->rollBack();
+        $message = "Ошибка: " . $e->getMessage();
+        $messageType = "error";
+    }
+}
+
 ?>

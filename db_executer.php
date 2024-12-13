@@ -38,5 +38,24 @@ class ActionLogger {
             throw new Exception("Ошибка: " . $e->getMessage());
         }
     }
+    public function beginTransaction() {
+        $this->conn->begin_transaction();
+    }
+
+    public function commit() {
+        $this->conn->commit();
+    }
+
+    public function rollBack() {
+        $this->conn->rollback();
+    }
+
+    public function getConnection() {
+        return $this->conn;
+    }
+
+    public function __destruct() {
+        $this->conn->close();
+    }
 }
 ?>

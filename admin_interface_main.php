@@ -577,7 +577,7 @@ function changeColor(select) {
                 <h2>Поиск заказа</h2>
                 <form method="POST" action="?table=orders&action=search">
                     <div class="input-group">
-                        <input type="text" name="search_order_id" placeholder="ID заказа (необязательно)">
+                        <input type="text" name="search_id" placeholder="ID заказа (необязательно)">
                     </div>
                     <div class="input-group">
                         <select name="search_type_order" class="custom-select" onchange="changeColor(this)">
@@ -681,8 +681,164 @@ function changeColor(select) {
                     </div>
                     <button type="submit" name="edit_order" class="btn">Изменить</button>
                 </form>
-    
+            
+
+                <?php  elseif ($selectedTable === 'customers'): ?>
+                <!-- Поиск покупателей -->
+                <h2>Поиск покупателя</h2>
+                <form method="POST" action="?table=customers&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_id" placeholder="ID покупателя (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_login" placeholder="Логин покупателя (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_first_name" placeholder="Имя (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_second_name" placeholder="Фамилия (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_email" placeholder="Email (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_contact_phone" placeholder="Телефон (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_customer">Поиск покупателя</button>
+                </form>
+
+                <!-- Добавление покупателя -->
+                <h2>Добавить покупателя</h2>
+                <form method="POST" action="?table=customers" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="login" placeholder="Логин" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="password" placeholder="Пароль" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="first_name" placeholder="Имя" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="second_name" placeholder="Фамилия" >
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="email" placeholder="Email" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="contact_phone" placeholder="Контактный телефон" >
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="address" placeholder="Адрес" >
+                    </div>
+                    <button type="submit" class="btn" name="add_customer">Добавить покупателя</button>
+                </form>
+
+                <!-- Изменение данных покупателя -->
+                <h2>Изменить данные покупателя</h2>
+                <form method="POST" action="?table=customers&action=edit">
+                    <div class="input-group">
+                        <input type="text" name="edit_id" placeholder="ID покупателя" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_login" placeholder="Логин">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_first_name" placeholder="Имя">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_second_name" placeholder="Фамилия">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="edit_email" placeholder="Email">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_contact_phone" placeholder="Контактный телефон">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_address" placeholder="Адрес">
+                    </div>
+                    <button type="submit" class="btn" name="edit_customer">Изменить покупателя</button>
+                </form>
+                
+                <?php elseif ($selectedTable === 'staff'): ?>
+                <!-- Поиск сотрудников -->
+                <h2>Поиск сотрудника</h2>
+                <form method="POST" action="?table=staff&action=search">
+                    <div class="input-group">
+                        <input type="text" name="search_id" placeholder="ID сотрудника (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_login" placeholder="Логин сотрудника (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_first_name" placeholder="Имя (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_second_name" placeholder="Фамилия (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="search_email" placeholder="Email (необязательно)">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="search_contact_phone" placeholder="Телефон (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="search_staff">Поиск сотрудника</button>
+                </form>
+
+                <!-- Добавление сотрудника -->
+                <h2>Добавить сотрудника</h2>
+                <form method="POST" action="?table=staff" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="text" name="first_name" placeholder="Имя" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="second_name" placeholder="Фамилия" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="login" placeholder="Логин" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="email" placeholder="Email">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="contact_phone" placeholder="Контактный телефон">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="idpost" placeholder="ID Должности (необязательно)">
+                    </div>
+                    <button type="submit" class="btn" name="add_staff">Добавить сотрудника</button>
+                </form>
+
+                <!-- Изменение данных сотрудника -->
+                <h2>Изменить данные сотрудника</h2>
+                <form method="POST" action="?table=staff&action=edit">
+                    <div class="input-group">
+                        <input type="text" name="edit_id" placeholder="ID сотрудника" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_first_name" placeholder="Имя">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_second_name" placeholder="Фамилия">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_login" placeholder="Логин">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" name="edit_email" placeholder="Email">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_contact_phone" placeholder="Контактный телефон">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="edit_idpost" placeholder="ID Должности">
+                    </div>
+                    <button type="submit" class="btn" name="edit_staff">Изменить сотрудника</button>
+                </form>
             <?php else: ?>
+
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
             <?php endif; ?>
             <h2>Вывод данных</h2>
@@ -723,7 +879,7 @@ function changeColor(select) {
                         break;
                 
                     case 'customers':
-                        if (!isset($_POST['search_customers']) && !isset($_POST['sort_table'])) {
+                        if (!isset($_POST['search_customer']) && !isset($_POST['sort_table'])) {
                             $customers = $customersTable->fetchLimited($rowCount);
                         }
                         $customersTable->renderTable($customers, 'Покупатели');
