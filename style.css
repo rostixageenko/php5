@@ -427,8 +427,9 @@ select:hover {
 }
 .upload-icon {
   font-size: 30px; /* Размер значка */
-  color: gray; /* Цвет значка */
-  position: absolute; /* Позволяет центровать иконку внутри рамки */
+  color:#0062cb gray; /* Цвет значка */
+  position: absolute;
+  /* Позволяет центровать иконку внутри рамки */
 }
 
 /* *{

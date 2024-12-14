@@ -117,7 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql_query'])) {
 </head>
 <body>
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo"> 
+    <a href="admin_interface_main.php">
+        <img src="image/logo5.png" alt="Логотип" class="logo">
+    </a>
     <p>
         <a href="admin_interface_main.php" class="button">Назад</a>    
         <a href="index.php?logout='1'" class="button">Выйти</a>

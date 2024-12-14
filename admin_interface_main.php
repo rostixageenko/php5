@@ -223,7 +223,9 @@ function changeColor(select) {
 </head>
 <body>
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo">
+<a href="admin_interface_main.php">
+        <img src="image/logo5.png" alt="Логотип" class="logo">
+    </a>
     <div class="menu">
         <div class="dropdown">
             <button class="button">База данных</button>

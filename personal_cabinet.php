@@ -7,16 +7,18 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-
-// Получение данных пользователя
 $login = $_SESSION['login'];
-$query = "SELECT * FROM staff WHERE login='$login'";
-$results = mysqli_query($db, $query);
-$row = mysqli_fetch_assoc($results);
-$id_user = $row['id'];
+$type_role = $_SESSION['type_role'];
+$message = ""; 
+$messageType = "success";
 
-$customerTable = new TableFunction($db, 'staff');
-$customer = $customerTable->fetch(["id = '$id_user'"]);
+if ($type_role == 0) {
+    $customerTable = new TableFunction($db, 'customers');
+    $customer = $customerTable->fetch(["login = '$login'"]);
+} elseif ($type_role == 1 || $type_role == 2) {
+    $customerTable = new TableFunction($db, 'staff');
+    $customer = $customerTable->fetch(["login = '$login'"]);
+}
 
 // Проверка, существует ли пользователь
 if (empty($customer)) {
@@ -24,50 +26,64 @@ if (empty($customer)) {
 }
 $customer = $customer[0]; // Извлекаем данные пользователя
 
-$message = ""; // Сообщение об обновлении данных
-$messageType = "success"; // По умолчанию тип сообщения
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Обработка формы изменения данных
     $first_name = trim($_POST['first_name']);
     $second_name = trim($_POST['second_name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['contact_phone']);
+    $address = $type_role == 0 ? trim($_POST['address']) : null;
 
     // Валидация данных
-    if (empty($first_name) || empty($second_name) || empty($email) || empty($phone)) {
+    if (empty($first_name) || empty($second_name) || empty($email) || empty($phone) || ($type_role == 0 && empty($address))) {
         $message = "Пожалуйста, заполните все поля.";
         $messageType = "error";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "Некорректный формат email.";
         $messageType = "error";
     } else {
-        // Подготовка и выполнение запроса обновления данных
-        $stmt = $db->prepare("UPDATE staff SET first_name = ?, second_name = ?, email = ?, contact_phone = ? WHERE id = ?");
-        $stmt->bind_param("ssssi", $first_name, $second_name, $email, $phone, $id_user);
+        // Проверка существования email
+        $emailCheckStmt = $db->prepare("SELECT COUNT(*) FROM customers WHERE email = ? AND login != ?");
+        $emailCheckStmt->bind_param("ss", $email, $login);
+        $emailCheckStmt->execute();
+        $emailCheckStmt->bind_result($emailCount);
+        $emailCheckStmt->fetch();
+        $emailCheckStmt->close();
 
-        try {
-            if ($stmt->execute()) {
-                $message = "Данные успешно обновлены!";
-                $_SESSION['first_name'] = $first_name; // Обновление сессионных данных
-                // После успешного обновления можно обновить данные из базы
-                $customer = $customerTable->fetch(["id = '$id_user'"])[0];
-                $login = $_SESSION['login'];
-                $id_user = $_SESSION['user_id'];
-                
-                // Логируем действие
-                $Actstr = "Пользователь $login типа '0' обновил данные о себе";
-                $dbExecutor->insertAction($id_user, $Actstr);
+        if ($emailCount > 0) {
+            $message = "Этот email уже используется другим пользователем.";
+            $messageType = "error";
+        } else {
+            // Подготовка и выполнение запроса обновления данных
+            if ($type_role == 0) {
+                $stmt = $db->prepare("UPDATE customers SET first_name = ?, second_name = ?, email = ?, contact_phone = ?, address = ? WHERE login = ?");
+                $stmt->bind_param("sssssi", $first_name, $second_name, $email, $phone, $address, $login);
             } else {
-                $message = "Ошибка обновления данных.";
+                $stmt = $db->prepare("UPDATE staff SET first_name = ?, second_name = ?, email = ?, contact_phone = ? WHERE login = ?");
+                $stmt->bind_param("ssssi", $first_name, $second_name, $email, $phone, $login);
+            }
+
+            try {
+                if ($stmt->execute()) {
+                    $message = "Данные успешно обновлены!";
+                    $_SESSION['first_name'] = $first_name;
+                    $customer = $customerTable->fetch(["login = '$login'"])[0];
+                    $login = $_SESSION['login'];
+                    $id_user = $_SESSION['user_id'];
+                    
+                    $Actstr = "Пользователь $login типа '$type_role' обновил данные о себе";
+                    $dbExecutor->insertAction($id_user, $Actstr);
+                } else {
+                    $message = "Ошибка обновления данных.";
+                    $messageType = "error";
+                }
+            } catch (mysqli_sql_exception $e) {
+                $message = "Ошибка: " . $e->getMessage();
                 $messageType = "error";
             }
-        } catch (mysqli_sql_exception $e) {
-            $message = "Ошибка: " . $e->getMessage();
-            $messageType = "error";
-        }
 
-        $stmt->close();
+            $stmt->close();
+        }
     }
 }
 ?>
@@ -80,23 +96,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Личный кабинет</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Стили для сообщений и формы */
         .success, .error {
-            color: white; /* Белый цвет текста */
+            color: white;
             padding: 10px;
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            display: none; /* Скрыто по умолчанию */
-            border-radius: 8px; /* Скругленные края */
+            display: none;
+            border-radius: 8px;
         }
         .success {
-            background: rgba(76, 175, 80, 0.8); /* Прозрачный фон */
+            background: rgba(76, 175, 80, 0.8);
             border: 1px solid #3c763d;
         }
         .error {
-            background: rgba(192, 57, 43, 0.8); /* Прозрачный фон */
+            background: rgba(192, 57, 43, 0.8);
             border: 1px solid #a94442;
         }
     </style>
@@ -116,9 +133,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <header>
-    <img src="image/logo5.png" alt="Логотип" class="logo"> 
+<a href="<?php 
+    if ($type_role == 0) {
+        echo 'user_interface_main.php'; 
+    } elseif ($type_role == 1) {
+        echo 'admin_interface_main.php'; 
+    } elseif ($type_role == 2) {
+        echo 'employee_interface_main.php'; 
+    }
+?>">
+    <img src="image/logo5.png" alt="Логотип" class="logo">
+</a>
     <p>
-        <a href="admin_interface_main.php" class="button">Назад</a>    
+        <a class="button" href="<?php 
+    if ($type_role == 0) {
+        echo 'user_interface_main.php'; 
+    } elseif ($type_role == 1) {
+        echo 'admin_interface_main.php'; 
+    } elseif ($type_role == 2) {
+        echo 'employee_interface_main.php'; 
+    }
+?>"> Назад</a>  
+          
         <a href="index.php?logout='1'" class="button">Выйти</a>
     </p>
 </header>
@@ -135,20 +171,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="">
             <div class="input-group">
                 <label for="first_name">Имя:</label>
-                <input type="text" name="first_name" value="<?php echo htmlspecialchars($customer['first_name']); ?>" required>
+                <input type="text" name="first_name" value="<?php echo htmlspecialchars($customer['first_name']); ?>" >
             </div>
             <div class="input-group">
                 <label for="second_name">Фамилия:</label>
-                <input type="text" name="second_name" value="<?php echo htmlspecialchars($customer['second_name']); ?>" required>
+                <input type="text" name="second_name" value="<?php echo htmlspecialchars($customer['second_name']); ?>" >
             </div>
             <div class="input-group">
                 <label for="email">Email:</label>
-                <input type="email" name="email" value="<?php echo htmlspecialchars($customer['email']); ?>" required>
+                <input type="email" name="email" value="<?php echo htmlspecialchars($customer['email']); ?>" >
             </div>
             <div class="input-group">
                 <label for="contact_phone">Телефон:</label>
-                <input type="tel" name="contact_phone" value="<?php echo htmlspecialchars($customer['contact_phone']); ?>" required>
+                <input type="tel" name="contact_phone" value="<?php echo htmlspecialchars($customer['contact_phone']); ?>" >
             </div>
+            <?php if ($type_role == 0): ?>
+                <div class="input-group">
+                    <label for="address">Адрес:</label>
+                    <input type="text" name="address" value="<?php echo htmlspecialchars($customer['address']); ?>" >
+                </div>
+            <?php endif; ?>
             <button type="submit" class="btn">Сохранить изменения</button>
         </form>
     </div>
