@@ -1,5 +1,10 @@
 <?php
-include('table_func.php'); // Подключаем файл с функциями и классами
+include('server_func.php'); // Подключаем файл с функциями и классами
+
+if (!isset($_SESSION['login'])) {
+    $_SESSION['msg'] = "Вы вошли впервые";
+    header('location: login.php');
+}
 
 // Проверка, была ли загружена форма
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
@@ -649,7 +654,12 @@ function changeColor(select) {
                             <button type="button" class="add-part" onclick="addPart()" style="margin-left: 10px;">➕</button>
                         </div>
                     </div>
-                    
+                    <div class="input-group">
+                        <input type="text" name="id_customer" placeholder="ID покупателя" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="address" placeholder="Адрес доставки" required>
+                    </div>
                     <br>
                     <button type="submit" class="btn" name="add_order">Добавить заказ</button>
                 </form>

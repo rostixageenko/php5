@@ -7,6 +7,7 @@ $username = "root";
 $password = "";
 $dbname = "auto_disassembly_station";
 
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {

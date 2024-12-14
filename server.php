@@ -1,6 +1,10 @@
 <?php
 include_once("db_executer.php");
-session_start();
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); // Запускаем сессию только если она не активна
+}
+
 
 $login = "";
 $password = "";
@@ -99,7 +103,11 @@ if (isset($_POST['login_user'])) {
             $_SESSION['type_role'] = $row['type_role']; 
             $Actstr = "Пользователь $login типа '$user_type' зашел в систему.";
             $dbExecutor->insertAction($id_user, $Actstr);
-            header('Location: index.php');
+            if($_SESSION['type_role']===0){
+                header('Location: user_interface_main.php');
+            }else{
+                header('Location: index.php');
+            }
             exit(); 
         } else {
             array_push($errors, "Неверный логин или пароль");

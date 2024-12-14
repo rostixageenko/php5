@@ -1,4 +1,5 @@
 <?php
+
 // Database configuration
 //session_start();
 include 'sessionConf.php';

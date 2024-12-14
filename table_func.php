@@ -2,12 +2,15 @@
 class TableFunction {
     public $db;
     public $tableName;
+    private $isClosed = false;
 
-    public function __construct($dbConnection, $tableName) {
+    public function __construct($dbConnection,$tableName= 'default_table') {
         $this->db = $dbConnection;
         $this->tableName = $tableName;
+        if ($this->db->connect_error) {
+            die("Connection failed: " . $this->db->connect_error);
+        }
     }
-
     public function fetch($conditions = []) {
         $query = "SELECT * FROM " . mysqli_real_escape_string($this->db, $this->tableName);
         if (!empty($conditions)) {
@@ -356,6 +359,15 @@ class TableFunction {
         return $result->fetch_assoc(); // Возвращаем ассоциативный массив
     }
 
+    public function getCustomerByLogin($login) {
+        $sql = "SELECT * FROM customers WHERE login = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $login); // Привязываем параметр
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc(); // Возвращаем ассоциативный массив
+    }
+
     // Метод для получения пользователя по email
     public function getUserByEmail($email) {
         // Подготовка SQL-запроса
@@ -422,8 +434,24 @@ class TableFunction {
             return null; // Если поставщик не найден, возвращаем null
         }
     }
-    
+    public function beginTransaction() {
+        $this->db->begin_transaction();
+    }
+
+    public function commit() {
+        $this->db->commit();
+    }
+
+    public function rollBack() {
+        $this->db->rollback();
+    }
+
+    public function getConnection() {
+        return $this->db;
+    }
+
 }
+
 // Подключение к базе данных
 include('server.php');
 
@@ -1356,7 +1384,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         'type_order' => $_POST['type_order'],
         'status' => $_POST['status'],
         'purchase_price' => $_POST['purchase_price'],
-        'idcustomer' => $_POST['id_customer']
+        'idcustomer' => $_POST['id_customer'],
+        'address' => $_POST['address']
     ];
 
     // Вызов функции добавления заказа
@@ -1807,10 +1836,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID покупателя для удаления    
 
     // Создаем экземпляр класса ActionLogger
-    $logger = new ActionLogger();
+    $tranzact = new TableFunction($db);
 
     // Начало транзакции
-    $logger->beginTransaction();
+    $tranzact->beginTransaction();
 
     try {
 
@@ -1835,7 +1864,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         // Проверяем, были ли успешно удалены все записи
         if ($cartDeleted && $userDeleted && $customerDeleted) {
             // Подтверждаем транзакцию
-            $logger->commit();
+            $tranzact->commit();
 
             // Логируем действие
             $login = $_SESSION['login'];
@@ -1849,13 +1878,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
             $messageType = "success";
         } else {
             // Откатываем транзакцию в случае ошибки
-            $logger->rollBack();
+            $tranzact->rollBack();
             $message = "Ошибка: не удалось удалить покупателя.";
             $messageType = "error";
         }
     } catch (Exception $e) {
         // Откатываем транзакцию в случае исключения
-        $logger->rollBack();
+        $tranzact->rollBack();
         $message = "Ошибка: " . $e->getMessage();
         $messageType = "error";
     }
@@ -2166,11 +2195,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID сотрудника для удаления    
 
     // Создаем экземпляр класса ActionLogger
-    $logger = new ActionLogger();
+    $tranzact = new TableFunction($db);
 
     // Начало транзакции
-    $logger->beginTransaction();
-
+ 
     try {
         // Получаем логин сотрудника по ID
         $sql = "SELECT login FROM staff WHERE id = ?";
@@ -2188,7 +2216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $us = $usersTable->getUserByLogin($login_in_staff);
         $user_id = $us['id'];
 
+       
         // Удаляем связанные записи
+        $tranzact->beginTransaction();
         $garageDeleted = $staffGarageTable->deleteUser($id, 'idstaff');
         $userDeleted = $usersTable->deleteUser($user_id);
         $historyAutopartsDeleted = $historyOperationsWithAutopartTable->deleteUser($id, 'idstaff');
@@ -2200,9 +2230,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         // file_put_contents($file, $datafile);
 
         // Проверяем, были ли успешно удалены все записи
-        if ($garageDeleted && $userDeleted && $staffDeleted&&$historyAutopartsDeleted&&$historyCarDeleted) {
+        if ($garageDeleted && $userDeleted && $staffDeleted) {
             // Подтверждаем транзакцию
-            $logger->commit();
+            $tranzact->commit();
 
             // Логируем действие
             $login = $_SESSION['login'];
@@ -2216,20 +2246,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
             $messageType = "success";
         } else {
             // Откатываем транзакцию в случае ошибки
-            $logger->rollBack();
+            $tranzact->rollBack();
             $message = "Ошибка: не удалось удалить сотрудника.";
             $messageType = "error";
         }
     } catch (Exception $e) {
         // Откатываем транзакцию в случае исключения
-        $logger->rollBack();
-        $message = "Ошибка: " . $e->getMessage();
-        $messageType = "error";
+        $tranzact->rollBack();
+        $message =  $e->getMessage();
+        $messageType = "error"; // Ошибка
     }
+
 }
-
-
-
 
 
 
@@ -2424,9 +2452,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $message="Нельзя удалить этого поставщика, так как когда то он уже был удалён(((";
         $message_type="error";
     }else{   
-    $logger = new ActionLogger();
+    $tranzact = new TableFunction($db);
     // Начало транзакции
-    $logger->beginTransaction();
+    $tranzact->beginTransaction();
 
     try {
         $sql = "SELECT name_organization FROM suppliers WHERE id = ?";
@@ -2451,7 +2479,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         // Проверяем, были ли успешно удалены все записи
         if ($supplierDeleted &&$resultcar) {
             // Подтверждаем транзакцию
-            $logger->commit();
+            $tranzact->commit();
 
             // Логируем действие
             $login = $_SESSION['login'];
@@ -2465,13 +2493,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
             $messageType = "success";
         } else {
             // Откатываем транзакцию в случае ошибки
-            $logger->rollBack();
+            $tranzact->rollBack();
             $message = "Ошибка: не удалось удалить поставщика.";
             $messageType = "error";
         }
     } catch (Exception $e) {
         // Откатываем транзакцию в случае исключения
-        $logger->rollBack();
+        $tranzact->rollBack();
         $message = "Ошибка: " . $e->getMessage();
         $messageType = "error";
     }

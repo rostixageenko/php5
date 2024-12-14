@@ -2,6 +2,7 @@
 include('table_func.php'); // Подключаем файл с функциями и классами
 include_once('server.php'); // Подключение к базе данных
 
+
 // Проверяем, авторизован ли пользователь
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
