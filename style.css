@@ -460,7 +460,18 @@ select:hover {
 
 
 
-
+.container-cabinet{
+  width: 100%;
+  max-width: 1300px;
+  margin-left: 30px;
+  margin-top: 30px;
+  margin-right: 30px;
+  margin-bottom: 26px;
+  padding: 30px;
+  border: 1px solid #ffffff;
+  background: white;
+  border-radius: 10px 10px 10px 10px;
+}
 
 
 
@@ -509,7 +520,7 @@ select:hover {
 .custom-main {
   background-color:#e6e9ee; 
   width: 98.7%;
-
+min-height: 558px;
   padding: 10px; /* Отступ внутри элемента */
   box-shadow: none; /* Убираем тень */
 }
@@ -533,7 +544,7 @@ select:hover {
 }
 
 .header-form {
-  background-color: rgb(10, 41, 166);
+  background-color: rgb(3, 27, 125);
   padding: 10px;
   margin-left: 10px; 
   margin-top: 10px;
@@ -706,7 +717,7 @@ border-color: #888; /* Цвет рамки при наведении */
 
   /* Эффект при наведении для всех кнопок */
 .custom_button_second:hover {
-  background-color:#0056b3; /* Цвет кнопки при наведении */
+  background-color:#004d9f; /* Цвет кнопки при наведении */
   transform: scale(1.05); /* Увеличение при наведении */
 }
 
@@ -716,7 +727,7 @@ border-color: #888; /* Цвет рамки при наведении */
 }
 
 .custom-btn_sec {
-  background:#007BFF;
+  background:#0158b4;
   color: white;
   border: none;
   border-radius: 5px;
@@ -725,7 +736,7 @@ border-color: #888; /* Цвет рамки при наведении */
   width: 100%;
 }
 .custom-btn_sec:hover {
-  background:#0056b3;
+  background:#004d9f;
 }
 .sort-options {
   margin-bottom: 15px;
@@ -812,7 +823,7 @@ border-color: #888; /* Цвет рамки при наведении */
   margin: 10px 0; /* Отступы сверху и снизу */
 }
 .add-to-cart-btn {
-  background-color: #007BFF; /* Синий фон для кнопки */
+  background-color: #0158b4; /* Синий фон для кнопки */
   color: white;
   border: none;
   padding: 10px;
@@ -1018,7 +1029,7 @@ h1 {
 .cart-container {
   flex: 1;
   background-color: #ffffff;
-  border-radius: 20px;
+  border-radius: 8px;
   margin-right: 30px;
   margin-left: 30px;
   margin-top: 20px;
@@ -1030,7 +1041,7 @@ h1 {
 .delivery-container {
   flex: 1;
   background-color: #ffffff;
-  border-radius: 20px;
+  border-radius: 8px;
   margin-right: 30px;
   margin-left: 30px;
   margin-top: 20px;

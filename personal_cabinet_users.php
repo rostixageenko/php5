@@ -132,66 +132,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
-<header>
-<a href="<?php 
-    if ($type_role == 0)  {
-        echo 'admin_interface_main.php'; 
-    } elseif ($type_role == 2) {
-        echo 'employee_interface_main.php'; 
-    }
-?>">
-    <img src="image/logo_new.png" alt="Логотип" class="logo">
-</a>
-    <p>
-        <a class="button" href="<?php 
-    if ($type_role == 0) {
-        echo 'user_interface_main.php'; 
-    } elseif ($type_role == 1) {
-        echo 'admin_interface_main.php'; 
-    } elseif ($type_role == 2) {
-        echo 'employee_interface_main.php'; 
-    }
-?>"> Назад</a>  
-          
-        <a href="index.php?logout='1'" class="custom-button">Выйти</a>
-    </p>
-</header>
+<header class="header-user">
+        <a href="user_interface_main.php">
+            <img src="image/logo_new.png" alt="Логотип" class="logo">
+        </a>
+        <nav>
+            <a href="user_interface_main.php" class="custom_button_second"> Назад</a>
+            <a href="index.php?logout='1'" class="custom_button_second">Выйти</a>
+        </nav>
+    </header>
 
 <main class="custom-main">
-    <div class="container-cabinet">
+
+        <div class="container-cabinet">
         <h2>Личный кабинет</h2>
 
-        <!-- Всплывающее сообщение -->
-        <div id="popup-message" class="<?php echo htmlspecialchars($messageType); ?>" style="<?php echo !empty($message) ? 'display:block;' : 'display:none;'; ?>">
-            <?php if (!empty($message)) echo htmlspecialchars($message); ?>
-        </div>
+<!-- Всплывающее сообщение -->
+<div id="popup-message" class="<?php echo htmlspecialchars($messageType); ?>" style="<?php echo !empty($message) ? 'display:block;' : 'display:none;'; ?>">
+    <?php if (!empty($message)) echo htmlspecialchars($message); ?>
+</div>
 
-        <form method="POST" action="">
-            <div class="input-group">
-                <label for="first_name">Имя:</label>
-                <input type="text" name="first_name" value="<?php echo htmlspecialchars($customer['first_name']); ?>" >
-            </div>
-            <div class="input-group">
-                <label for="second_name">Фамилия:</label>
-                <input type="text" name="second_name" value="<?php echo htmlspecialchars($customer['second_name']); ?>" >
-            </div>
-            <div class="input-group">
-                <label for="email">Email:</label>
-                <input type="email" name="email" value="<?php echo htmlspecialchars($customer['email']); ?>" >
-            </div>
-            <div class="input-group">
-                <label for="contact_phone">Телефон:</label>
-                <input type="tel" name="contact_phone" value="<?php echo htmlspecialchars($customer['contact_phone']); ?>" >
-            </div>
-            <?php if ($type_role == 0): ?>
-                <div class="input-group">
-                    <label for="address">Адрес:</label>
-                    <input type="text" name="address" value="<?php echo htmlspecialchars($customer['address']); ?>" >
-                </div>
-            <?php endif; ?>
-            <button type="submit" class="btn">Сохранить изменения</button>
-        </form>
-    </di>
+<form method="POST" action="">
+    <div class="input-group">
+        <label for="first_name">Имя:</label>
+        <input type="text" name="first_name" value="<?php echo htmlspecialchars($customer['first_name']); ?>" >
+    </div>
+    <div class="input-group">
+        <label for="second_name">Фамилия:</label>
+        <input type="text" name="second_name" value="<?php echo htmlspecialchars($customer['second_name']); ?>" >
+    </div>
+    <div class="input-group">
+        <label for="email">Email:</label>
+        <input type="email" name="email" value="<?php echo htmlspecialchars($customer['email']); ?>" >
+    </div>
+    <div class="input-group">
+        <label for="contact_phone">Телефон:</label>
+        <input type="tel" name="contact_phone" value="<?php echo htmlspecialchars($customer['contact_phone']); ?>" >
+    </div>
+    <?php if ($type_role == 0): ?>
+        <div class="input-group">
+            <label for="address">Адрес:</label>
+            <input type="text" name="address" value="<?php echo htmlspecialchars($customer['address']); ?>" >
+        </div>
+    <?php endif; ?>
+    <button type="submit" class="btn">Сохранить изменения</button>
+</form>
+        </div>
+        
+
 </main>
 
 </body>

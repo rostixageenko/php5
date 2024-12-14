@@ -1,6 +1,7 @@
 <?php
 include_once("db_executer.php");
 include('table_func.php');
+include('parts.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start(); // Запускаем сессию только если она не активна
@@ -2682,4 +2683,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     }
 }
 
+// Создаем экземпляр класса AutoPartsManager
+$autoPartsManager = new AutoPartsManager($db);
+
+// Получение запчастей
+// $message = '';
+// $messageType = 'success';
+
+// Проверка метода запроса и наличие кнопки поиска
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
+
+    // Получаем данные из формы
+    $carBrand = isset($_POST['search_car_brand']) ? trim($_POST['search_car_brand']) : '';
+    $carModel = isset($_POST['search_car_model']) ? trim($_POST['search_car_model']) : '';
+    $sparePart = isset($_POST['spare_parts']) ? trim($_POST['spare_parts']) : '';
+    $article = isset($_POST['search_article']) ? trim($_POST['search_article']) : '';
+    $newArrivals = isset($_POST['new_arrivals']) ? 1 : 0;
+    $body = isset($_POST['body']) ? trim($_POST['body']) : '';
+    $itemNumber = isset($_POST['item_number']) ? trim($_POST['item_number']) : '';
+    $onlyWithPhoto = isset($_POST['only_with_photo']) ? 1 : 0;
+
+    // Условия для поиска
+    $searchConditions = [];
+    
+    if (!empty($carBrand)) {
+        $searchConditions[] = "brand = '" . mysqli_real_escape_string($db, $carBrand) . "'";
+    }
+    if (!empty($carModel)) {
+        $searchConditions[] = "model = '" . mysqli_real_escape_string($db, $carModel) . "'";
+    }
+    if (!empty($sparePart)) {
+        $searchConditions[] = "name_parts = '" . mysqli_real_escape_string($db, $sparePart) . "'";
+    }
+    if (!empty($releaseYearStart)) {
+        $searchConditions[] = "year_production >= " . $releaseYearStart;
+    }
+    if (!empty($releaseYearEnd)) {
+        $searchConditions[] = "year_production <= " . $releaseYearEnd;
+    }
+    if (!empty($body)) {
+        $searchConditions[] = "body_type = '" . mysqli_real_escape_string($db, $body) . "'";
+    }
+    if (!empty($itemNumber)) {
+        $searchConditions[] = "article =  LIKE '%" . mysqli_real_escape_string($db, $itemNumber) . "'";
+    }
+    if ($onlyWithPhoto) {
+        $searchConditions[] = "photo not null";
+    }
+
+    // Выполняем поиск запчастей с учетом условий
+    $parts = $autoPartsManager->fetchParts($searchConditions);
+
+    //Проверка наличия результатов
+    if (empty($parts)) {
+        $message = "Запчасти не найдены.";
+        $messageType = "error";
+    } else {
+        $message = ""; // Очистка сообщения, если нашли запчасти
+    }
+} else {
+    // Получаем все запчасти, если поиск не выполнен
+    $parts = $autoPartsManager->getAllParts();
+}
 ?>

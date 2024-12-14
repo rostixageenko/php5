@@ -13,7 +13,7 @@
 <body>
     <header class="header-user">
         <a href="user_interface_main.php">
-            <img src="image/logo5.png" alt="Логотип" class="logo">
+            <img src="image/logo_new.png" alt="Логотип" class="logo">
         </a>
         <nav>
             <a href="user_interface_main.php" class="custom_button_second"> Назад</a>

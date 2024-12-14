@@ -3,59 +3,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-include('table_func.php');
+include_once('server.php');
+include_once('parts.php');
 
-// Получение запчастей
-$numResults = 0;
-$parts = []; // Для хранения запчастей
-$message = '';
-$messageType = 'info'; // Тип сообщения, например 'success' или 'error'
+// Подсчет количества запчастей
+$numResults = count($parts);
 
-// Логика для получения запчастей
-$query = "
-    SELECT ap.*, c.brand, c.model, c.year_production
-    FROM auto_parts ap
-    JOIN cars c ON ap.idcar = c.id
-";
-$result = $db->query($query);
-if (!$result) {
-    $message = "Ошибка запроса: " . $db->error;
-    $messageType = 'error';
-} else {
-    if ($result->num_rows > 0) {
-        while ($part = $result->fetch_assoc()) {
-            $image = !empty($part['photo']) ? 'data:image/jpeg;base64,' . base64_encode($part['photo']) : 'default_image.jpg';
-            $part['image'] = $image;
-            $parts[] = $part;
-        }
-        $numResults = count($parts);
-    } else {
-        $message = "Запчасти не найдены.";
-        $messageType = 'info';
-    }
-}
-
-$db->close(); // Закрываем соединение с базой данных
-
-// Функция для отображения запчастей
-function renderTable($parts) {
-    $output = '';
-    foreach ($parts as $part) {
-        $output .= '<div class="part-card">';
-        $output .= '<div class="part-image-container">';
-        $output .= '<img src="' . htmlspecialchars($part['image']) . '" alt="' . htmlspecialchars($part['name_parts']) . '" class="part-image">';
-        $output .= '</div>'; // .part-image-container
-        $output .= '<div class="part-details">';
-        $output .= '<h3>' . htmlspecialchars($part['name_parts']) . '</h3>';
-        $output .= '<p><strong>Марка:</strong> ' . htmlspecialchars($part['brand']) . '</p>';
-        $output .= '<p><strong>Модель:</strong> ' . htmlspecialchars($part['model']) . '</p>';
-        $output .= '<p class="part-price">' . htmlspecialchars($part['purchase_price']) . ' р.</p>';
-        $output .= '<button class="add-to-cart-btn" onclick="addToCart(this, ' . $part['id'] . ')">Добавить в корзину</button>';
-        $output .= '</div>'; // .part-details
-        $output .= '</div>'; // .part-card
-    }
-    return $output;
-}
+// Закрываем соединение с БД
+$db->close();
 ?>
 
 <!DOCTYPE html>
@@ -63,66 +18,92 @@ function renderTable($parts) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Interface</title>
+    <title>Интерфейс пользователя</title>
     <link rel="stylesheet" href="style.css">
-    <script>
-        function addToCart(button, partId) {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "add_to_cart.php", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                    button.textContent = "Перейти в корзину";
-                    button.onclick = function() {
-                        window.location.href = "cart.php"; // Замените на URL вашей корзины
-                    };
-                }
-            };
-            xhr.send("part_id=" + partId);
+    <style>
+        .success, .error {
+            color: white;
+            padding: 10px;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: none; /* Скрыто по умолчанию */
+            border-radius: 8px; /* Скругленные края */
         }
-
+        .success {
+            background: rgba(76, 175, 80, 0.8);
+            border: 1px solid #3c763d;
+        }
+        .error {
+            background: rgba(192, 57, 43, 0.8);
+            border: 1px solid #a94442;
+        }
+    </style>
+    <script>
         const carModels = {
-            Toyota: ["Camry", "RAV4", "Highlander", "Corolla"],
-            Honda: ["Accord", "CR-V", "Pilot", "Civic"],
-            Ford: ["Focus", "Escape", "Explorer", "Mustang"],
-            Chevrolet: ["Malibu", "Equinox", "Tahoe", "Camaro"],
-            Nissan: ["Altima", "Rogue", "Murano", "370Z"],
-            Volkswagen: ["Passat", "Tiguan", "Jetta", "Golf"],
-            Hyundai: ["Sonata", "Tucson", "Elantra", "Santa Fe"],
-            Kia: ["Optima", "Sportage", "Forte", "Seltos"],
-            BMW: ["3 Series", "X5", "X3", "X1"],
-            Audi: ["A4", "Q5", "A6", "Q3"],
-            Subaru: ["Legacy", "Forester", "Outback"],
-            Mazda: ["6", "CX-5", "CX-9"],
-            Fiat: ["500", "Panda"],
-            Volvo: ["S60", "XC60"]
+            'Toyota': ['Camry', 'RAV4', 'Highlander', 'Corolla'],
+            'Honda': ['Accord', 'CR-V', 'Pilot', 'Civic'],
+            'Ford': ['Focus', 'Escape', 'Explorer', 'Mustang'],
+            'Chevrolet': ['Malibu', 'Equinox', 'Tahoe', 'Camaro'],
+            'Nissan': ['Altima', 'Rogue', 'Murano', '370Z'],
+            'Volkswagen': ['Passat', 'Tiguan', 'Jetta', 'Golf'],
+            'Hyundai': ['Sonata', 'Tucson', 'Elantra', 'Santa Fe'],
+            'Kia': ['Optima', 'Sportage', 'Forte', 'Seltos'],
+            'BMW': ['3 Series', 'X5', 'X3', 'X1'],
+            'Audi': ['A4', 'Q5', 'A6', 'Q3'],
+            'Subaru': ['Legacy', 'Forester', 'Outback'],
+            'Mazda': ['6', 'CX-5', 'CX-9'],
+            'Fiat': ['500', 'Panda'],
+            'Volvo': ['S60', 'XC60']
         };
 
-        document.getElementById('car_brand').addEventListener('change', function() {
-            const brand = this.value;
+        function updateModels() {
+            const brandSelect = document.getElementById('car_brand');
             const modelSelect = document.getElementById('car_model');
-            modelSelect.innerHTML = '<option value="">Модель</option>';
-            if (brand) {
-                carModels[brand].forEach(function(model) {
+            const selectedBrand = brandSelect.value;
+
+            // Очистка предыдущих моделей
+            modelSelect.innerHTML = '';
+
+            if (selectedBrand) {
+                const models = carModels[selectedBrand];
+                models.forEach(model => {
                     const option = document.createElement('option');
                     option.value = model;
                     option.textContent = model;
                     modelSelect.appendChild(option);
                 });
+                modelSelect.disabled = false; // Разблокируем выбор модели
+            } else {
+                modelSelect.disabled = true; // Блокируем выбор модели
             }
+        }
+
+        function toggleAdditionalParams() {
+            const additionalParams = document.getElementById('additional-params');
+            additionalParams.style.display = additionalParams.style.display === 'none' || additionalParams.style.display === '' ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const brandSelect = document.getElementById('car_brand');
+            brandSelect.addEventListener('change', updateModels);
+            const toggleButton = document.getElementById('toggle-additional-params');
+            toggleButton.addEventListener('click', toggleAdditionalParams);
         });
     </script>
 </head>
 <body>
 <header class="header-user">
     <a href="user_interface_main.php">
-        <img src="image/logo5.png" alt="Логотип" class="logo">
+        <img src="image/logo_new.png" alt="Логотип" class="logo">
     </a>
     <nav>
         <?php if (!isset($_SESSION['login'])): ?>
             <a href="login.php" class="custom_button_second">Войти</a>
         <?php else: ?>
-            <a href="personal_cabinet.php" class="custom_button_second">
+            <a href="personal_cabinet_users.php" class="custom_button_second">
                 <img src="image/cabinet_white.png" alt="Личный кабинет" class="nav-icon">
             </a>
             <a href="cart.php" class="custom_button_second">
@@ -134,6 +115,10 @@ function renderTable($parts) {
     </nav>
 </header>
 
+<div id="popup-message" class="<?php echo $messageType; ?>" style="<?php echo !empty($message) ? 'display:block;' : 'display:none;'; ?>">
+    <?php if (!empty($message)) echo $message; ?>
+</div>
+
 <main class="custom-main">
     <div class="container">
         <div>
@@ -142,36 +127,36 @@ function renderTable($parts) {
             </div>
             <div class="form-container-users">
                 <h2 class="results-header"><?php echo "Найдено запчастей: {$numResults}"; ?></h2>
-                <form method="POST" action="?table=auto_parts&action=search">
+                <form method="POST" action="">
                     <div class="input-group-users">
                         <label for="car_brand">Марка</label>
-                        <select name="search_car_brand" id="car_brand" required>
-                            <option value="">Марка</option>
-                            <option value="Toyota">Toyota</option>
-                            <option value="Honda">Honda</option>
-                            <option value="Ford">Ford</option>
-                            <option value="Chevrolet">Chevrolet</option>
-                            <option value="Nissan">Nissan</option>
-                            <option value="Volkswagen">Volkswagen</option>
-                            <option value="Hyundai">Hyundai</option>
-                            <option value="Kia">Kia</option>
-                            <option value="BMW">BMW</option>
-                            <option value="Audi">Audi</option>
-                            <option value="Subaru">Subaru</option>
-                            <option value="Mazda">Mazda</option>
-                            <option value="Fiat">Fiat</option>
-                            <option value="Volvo">Volvo</option>
-                        </select>
+                        <input list="car_brands" name="search_car_brand" id="car_brand" placeholder="Введите марку или выберите">
+                        <datalist id="car_brands">
+                            <option value="Toyota">
+                            <option value="Honda">
+                            <option value="Ford">
+                            <option value="Chevrolet">
+                            <option value="Nissan">
+                            <option value="Volkswagen">
+                            <option value="Hyundai">
+                            <option value="Kia">
+                            <option value="BMW">
+                            <option value="Audi">
+                            <option value="Subaru">
+                            <option value="Mazda">
+                            <option value="Fiat">
+                            <option value="Volvo">
+                        </datalist>
                     </div>
                     <div class="input-group-users">
                         <label for="car_model">Модель</label>
-                        <select name="search_car_model" id="car_model" required>
+                        <select name="search_car_model" id="car_model" disabled>
                             <option value="">Модель</option>
                         </select>
                     </div>
                     <div class="input-group-users">
                         <label for="spare_parts">Выберите запчасть</label>
-                        <select name="spare_parts" id="spare_parts" required>
+                        <select name="spare_parts" id="spare_parts">
                             <option value="">Выберите запчасть</option>
                             <option value="transmission">Коробка передач</option>
                             <option value="fuel_pump">Топливный насос</option>
@@ -190,16 +175,7 @@ function renderTable($parts) {
                             <option value="egr_valve">Клапан EGR</option>
                         </select>
                     </div>
-                    <div class="input-group-users">
-                        <label for="construction_number">Артикул</label>
-                        <input type="text" name="search_article" id="construction_number" placeholder="Конструкционный номер">
-                    </div>
-                    <div class="input-group-users" style="display: flex; align-items: center;">
-                        <input type="checkbox" name="new_arrivals" id="new_arrivals" style="width: 15px; height: 15px; margin-right: 3px;">
-                        <label for="new_arrivals" style="font-size: 0.8em;">Новые поступления</label>
-                    </div>
-
-                    <div class="toggle-button" id="toggle-additional-params" style="font-size: 0.8em;">
+                    <div class="toggle-button" id="toggle-additional-params" style="font-size: 0.8em; cursor: pointer;">
                         Дополнительные параметры
                     </div>
 
@@ -254,8 +230,8 @@ function renderTable($parts) {
                     </select>
                 </div>
             </div>
-            <div class="parts-list" id="parts-list">
-                <?php echo renderTable($parts); // Вызов функции отображения запчастей ?>
+            <div class="parts-list">
+                <?php echo $autoPartsManager->renderTable($parts); // Вызов метода отображения запчастей ?>
             </div>
         </div>
     </div>
@@ -265,17 +241,9 @@ function renderTable($parts) {
     <p>&copy; 2024 Radiator</p>
 </footer>
 
-<div id="popup-message" class="<?php echo $messageType; ?>" style="<?php echo !empty($message) ? 'display:block;' : 'display:none;'; ?>">
-    <?php if (!empty($message)) echo $message; ?>
-</div>
-
+<!-- Подключаем JavaScript -->
 <script src="frontjs.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    document.getElementById('toggle-additional-params').addEventListener('click', function() {
-        const additionalParams = document.getElementById('additional-params');
-        additionalParams.style.display = additionalParams.style.display === 'block' ? 'none' : 'block';
-    });
-</script>
+
 </body>
 </html>
