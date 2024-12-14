@@ -1,10 +1,5 @@
 <?php
-include('server_func.php'); // Подключаем файл с функциями и классами
-
-if (!isset($_SESSION['login'])) {
-    $_SESSION['msg'] = "Вы вошли впервые";
-    header('location: login.php');
-}
+include('server.php'); // Подключаем файл с функциями и классами
 
 // Проверка, была ли загружена форма
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
