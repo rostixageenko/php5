@@ -2716,8 +2716,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 $autoPartsManager = new AutoPartsManager();
 
 // Получение запчастей
-// $message = '';
-// $messageType = 'success';
+$message = '';
+$messageType = 'success';
 
 // Проверка метода запроса и наличие кнопки поиска
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
@@ -2773,7 +2773,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     $part = $autoPartsManager->getAllParts();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST'&& isset($_POST['add_to_cart'])) {
+// Добавление в корзину
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
     if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
         $partId = intval($_POST['part_id']);
         $customerId = intval($_POST['customer_id']);
@@ -2790,75 +2791,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'&& isset($_POST['add_to_cart'])) {
             $cart = $result->fetch_assoc();
             $cartId = $cart['id'];
 
-            // Добавляем запись в таблицу cart_auto_part
+            // Добавляем запись в таблицу cart_auto_parts
             $insertQuery = "INSERT INTO cart_auto_parts (idcart, idautoparts) VALUES ($cartId, $partId)";
             if ($db->query($insertQuery) === TRUE) {
                 $login = $_SESSION['login'];
-            $id_user = $_SESSION['user_id'];
-            $type_role = $_SESSION['type_role'];
-            $actStr = "Покупатель $login добавил запчасть в корзину ID=$partId.";
-            $logger->insertAction($id_user, $actStr);
+                $id_user = $_SESSION['user_id'];
+                $type_role = $_SESSION['type_role'];
+                $actStr = "Покупатель $login добавил запчасть в корзину ID=$partId.";
+                $logger->insertAction($id_user, $actStr);
             } else {
-                $message= "Ошибка добавления запчасти в корзину: " . $db->error;
+                $message = "Ошибка добавления запчасти в корзину: " . $db->error;
                 $messageType = "error";
             }
         } else {
-            $message=  "Корзина не найдена для данного покупателя.";
+            $message = "Корзина не найдена для данного покупателя.";
             $messageType = "error";
         }
     } else {
-        $message=  "Не указаны необходимые данные.";
+        $message = "Не указаны необходимые данные.";
         $messageType = "error";
     }
-} 
+}
 
-
- //сортировка запчастей
-
+// Сортировка запчастей
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_options'])) {
     $sortOption = isset($_POST['sort_options']) ? $_POST['sort_options'] : 'date'; // Значение по умолчанию
     // Сортировка запчастей
-    $part = $autoPartsManager->sortParts($part, $_POST['sort_options']);
+    $part = $autoPartsManager->sortParts($part, $sortOption);
 }
 
- //удаление из корзины
-// if ($_SERVER['REQUEST_METHOD'] === 'POST'&& isset($_POST['delete_from_cart'])) {
-//     if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
-//         $partId = intval($_POST['part_id']);
-//         $customerId = intval($_POST['customer_id']);
-//         $query = "SELECT id FROM cart WHERE idcustomer = $customerId";
-//         $result = $db->query($query);
+// Удаление из корзины
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_from_cart'])) {
+    if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
+        $partId = intval($_POST['part_id']);
+        $customerId = intval($_POST['customer_id']);
         
-//         if (!$result) {
-//             die("Ошибка запроса: " . $db->error);
-//         }
+        $query = "SELECT id FROM cart WHERE idcustomer = $customerId";
+        $result = $db->query($query);
+        
+        if (!$result) {
+            die("Ошибка запроса: " . $db->error);
+        }
 
-//         if ($result->num_rows > 0) {
-//             $cart = $result->fetch_assoc();
-//             $cartId = $cart['id'];
+        if ($result->num_rows > 0) {
+            $cart = $result->fetch_assoc();
+            $cartId = $cart['id'];
 
-//             // Добавляем запись в таблицу cart_auto_part
-//             $deleteQuery = "DELETE FROM cart_auto_parts WHERE idcart=$cartId AND idautoparts= $partId";
-//             if ($db->query($deleteQuery) === TRUE) {
-//                 $login = $_SESSION['login'];
-//             $id_user = $_SESSION['user_id'];
-//             $type_role = $_SESSION['type_role'];
-//             $actStr = "Покупатель $login удалил запчасть из корзины ID=$partId.  $cartId     $customerId  ";
-//             $logger->insertAction($id_user, $actStr);
-//             } else {
-//                 $message= "Ошибка добавления запчасти в корзину: " . $db->error;
-//                 $messageType = "error";
-//             }
-//         } else {
-//             $message=  "Корзина не найдена для данного покупателя.";
-//             $messageType = "error";
-//         }
-//     } else {
-//         $message=  "Не указаны необходимые данные.";
-//         $messageType = "error";
-//     }
-// } 
-
+            // Удаляем запись из таблицы cart_auto_parts
+            $deleteQuery = "DELETE FROM cart_auto_parts WHERE idcart=$cartId AND idautoparts=$partId";
+            if ($db->query($deleteQuery) === TRUE) {
+                $login = $_SESSION['login'];
+                $id_user = $_SESSION['user_id'];
+                $type_role = $_SESSION['type_role'];
+                $actStr = "Покупатель $login удалил запчасть из корзины ID=$partId.";
+                $logger->insertAction($id_user, $actStr);
+            } else {
+                $message = "Ошибка удаления запчасти из корзины: " . $db->error;
+                $messageType = "error";
+            }
+        } else {
+            $message = "Корзина не найдена для данного покупателя.";
+            $messageType = "error";
+        }
+    } else {
+        $message = "Не указаны необходимые данные.";
+        $messageType = "error";
+    }
+}
 
 
 ?>

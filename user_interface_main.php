@@ -7,6 +7,7 @@ include_once('server.php');
 include_once('parts.php');
 
 $_SESSION['cart']=null;
+$_SESSION['orders'] = null;
 
 // Подсчет количества запчастей
 $numResults = count($part);

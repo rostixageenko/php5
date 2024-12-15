@@ -974,7 +974,7 @@ h1 {
   padding: 15px;
   margin-top: 20px;
   margin-right: 30px;
-  height: 200px;
+  height: 235px;
   width: 300px;
 }
 
@@ -1115,10 +1115,10 @@ h1 {
   border-radius: 5px;
   background-color: rgb(247, 247, 247);
   cursor: pointer;
-  margin-top: 15px;
-  margin-right: 30px;
-  margin-left: 29px;
-
+  margin-top: 5px;
+  margin-right: 5px;
+  margin-left: 5px;
+  margin-bottom: 5px;
 } 
 
 .select-delivery {
@@ -1134,10 +1134,10 @@ h1 {
 .address-input input {
   padding: 10px;
   border: 1px solid #ccc;
-width: 92.7%;
-  height: 12px;
+  width: 88%;
+  height: 15px;
   margin-right: 30px;
-  margin-left: 29px;
+  margin-left: 5px;
   margin-bottom: 15px;
 }
 
@@ -1160,4 +1160,37 @@ width: 92.7%;
   border: none; /* Убираем границы */
 }
 
+
+
+.orders-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  max-width: 1100px;
+  margin: 0 auto; 
+  gap: 20px; /* Отступы между заказами */
+  padding: 20px; /* Отступы внутри контейнера */
+  background-color: #f9f9f9; /* Светлый фон для контейнера */
+  border-radius: 8px; /* Закругленные углы */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Тень для эффекта поднятия */
+}
+
+.order-details {
+  background-color: #ffffff; /* Белый фон для каждого заказа */
+  border: 1px solid #e0e0e0; /* Светлая граница */
+  max-width: 1000px;
+  border-radius: 8px; /* Закругленные углы для заказа */
+  padding: 15px; /* Отступы внутри заказа */
+  margin: 0 auto; /* Центрирование блока по горизонтали */
+  display: block; /* Убедиться, что элемент блочный */
+}
+
+.order-details h3 {
+  margin: 0; /* Убираем отступы у заголовка */
+  font-size: 1.2em; /* Размер шрифта для заголовка */
+}
+
+.order-details p {
+  margin: 5px 0; /* Отступы между параграфами */
+}
 

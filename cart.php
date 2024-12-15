@@ -63,46 +63,108 @@ else {
     exit();
 }
 
-// Инициализация переменных для способа доставки и адреса
-$selectedDeliveryMethod = 'pickup';
-$deliveryAddress = '';
 
 // Обработка заказа
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
     $totalPrice = array_sum(array_column($parts, 'purchase_price'));
-    if($totalPrice!==0){
-        $deliveryMethod = $_POST['deliveryMethod'];
-        if (!empty($_POST['deliveryAddress'])){
-            $deliveryAddress = $_POST['deliveryAddress'] ?? null;
-        }
+    
+    if ($totalPrice !== 0) {
+        $selectedDeliveryMethod = $_POST['deliveryMethod'];
         $customerId = $_SESSION['customerId'];
-
-
-        // Устанавливаем статус по умолчанию
         $status = 'Ожидается подтверждение';
 
-        // Вставляем данные в таблицу orders
-        $sql = 'INSERT INTO orders (type_order, status, purchase_price, idcustomer, address) VALUES (?, ?, ?, ?, ?)';
-        $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, 'sssis', $deliveryMethod, $status, $totalPrice, $customerId, $deliveryAddress);
-        
-        if (mysqli_stmt_execute($stmt)) {
-            // Очистка корзины после успешного оформления заказа
+        // Получаем адрес, если выбран способ доставки "Доставка"
+        if ($selectedDeliveryMethod === "Доставка") {
+            $sql = "SELECT address FROM customers WHERE id = ?";
+            $stmt = mysqli_prepare($db, $sql);
+            mysqli_stmt_bind_param($stmt, 'i', $customerId);
+            mysqli_stmt_execute($stmt);
+            $partsResult = mysqli_stmt_get_result($stmt);
+            $row = mysqli_fetch_assoc($partsResult);
+
+            if (!isset($row['address'])) {
+                $message = "Добавьте адрес в личном кабинете, чтобы оформить доставку";
+                $messageType = "error";
+            } else {
+                // Добавляем заказ в таблицу orders
+                $orderData = [
+                    'type_order' => $selectedDeliveryMethod,
+                    'status' => $status,
+                    'purchase_price' => $totalPrice,
+                    'idcustomer' => $customerId,
+                    'address' => $row['address']
+                ];
+                $orderTab = new TableFunction($db, 'orders');
+                $orderTab->addRecord($orderData); // Добавляем заказ
+                $orderID = $orderTab->getLastInsertedId(); // Получаем ID последнего заказа
+
+                // Обновляем запчасти в таблице auto_parts
+                $sql = "SELECT DISTINCT idautoparts FROM cart c 
+                        JOIN cart_auto_parts cap ON c.id = cap.idcart
+                        WHERE c.idcustomer = ?";
+                $stmt = mysqli_prepare($db, $sql);
+                mysqli_stmt_bind_param($stmt, 'i', $customerId);
+                mysqli_stmt_execute($stmt);
+                $partsResult = mysqli_stmt_get_result($stmt);
+                
+                while ($row = mysqli_fetch_assoc($partsResult)) {
+                    $data = ['idorder' => $orderID];
+                    $partsautoTable = new TableFunction($db, 'auto_parts');
+                    $partsautoTable->updateRecord('auto_parts', 'id', $row['idautoparts'], $data);
+                }
+
+                // Удаляем запчасти из корзины
+                $sql = 'DELETE FROM cart_auto_parts WHERE idcart = ?';
+                $stmt = mysqli_prepare($db, $sql);
+                mysqli_stmt_bind_param($stmt, 'i', $cartId);
+                mysqli_stmt_execute($stmt);
+
+                $message = "Заказ оформлен успешно, ожидайте";
+                $messageType = "success";
+                header('Location: cart.php');
+                exit();
+            }
+        } else { // Способ доставки "Самовывоз"
+            $orderData = [
+                'type_order' => $selectedDeliveryMethod,
+                'status' => $status,
+                'purchase_price' => $totalPrice,
+                'idcustomer' => $customerId
+            ];
+            $orderTab = new TableFunction($db, 'orders');
+            $orderTab->addRecord($orderData); // Добавляем заказ
+            $orderID = $orderTab->getLastInsertedId(); // Получаем ID последнего заказа
+
+            // Получаем ID запчастей из корзины
+            $sql = "SELECT DISTINCT idautoparts FROM cart c 
+                    JOIN cart_auto_parts cap ON c.id = cap.idcart
+                    WHERE c.idcustomer = ?";
+            $stmt = mysqli_prepare($db, $sql);
+            mysqli_stmt_bind_param($stmt, 'i', $customerId);
+            mysqli_stmt_execute($stmt);
+            $partsResult = mysqli_stmt_get_result($stmt);
+
+            while ($row = mysqli_fetch_assoc($partsResult)) {
+                $data = ['idorder' => $orderID];
+                $partsautoTable = new TableFunction($db, 'auto_parts');
+                $partsautoTable->updateRecord('auto_parts', 'id', $row['idautoparts'], $data);
+            }
+
+            // Удаляем запчасти из корзины
             $sql = 'DELETE FROM cart_auto_parts WHERE idcart = ?';
             $stmt = mysqli_prepare($db, $sql);
             mysqli_stmt_bind_param($stmt, 'i', $cartId);
             mysqli_stmt_execute($stmt);
-            $message="Заказ оформлен успешно, ожидайте";
-            $messageType="success";
-        } else {
-            $message="Ошибка оформления заказа";
-            $messageType= "error";
+
+            $message = "Заказ оформлен успешно, ожидайте";
+            $messageType = "success";
+            header('Location: cart.php');
+            exit();
         }
-    }else{
-        $message="Ошибка: добавьте товар в заказ";
-        $messageType= "error";
+    } else {
+        $message = "Ошибка: добавьте товар в заказ";
+        $messageType = "error";
     }
-    
 }
 
 ?>
@@ -162,17 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                     </div>
                 </div>
             </div>
-            <!-- Новое поле для выбора способа доставки -->
-            <div class="delivery-container">
-                <h3 class="cart-title">Способ доставки</h3>
-                <select class="deliverySelect" id="deliverySelect">
-                    <option value="pickup">Самовывоз</option>
-                    <option value="delivery">Доставка</option>
-                </select>
-                <div class="address-input" id="addressInput" style="display: none;">
-                    <input type="text" id="deliveryAddress" placeholder="Введите адрес доставки" required />
-                </div>
-            </div>
+           
         </div>
         
         <div>
@@ -182,10 +234,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                     <span>Товары:</span>
                     <span><?php echo count($parts); ?> шт.</span>
                 </div>
-                <div class="summary-item">
-                    <span>Способ доставки:</span>
-                    <span id="deliveryMethodDisplay">Самовывоз</span>
-                </div>
+                <form method="POST" action="cart.php">
+                <span>Способ доставки</span>
+                <select class="deliverySelect" id="deliverySelect" name="deliveryMethod">
+                    <option value="Самовывоз">Самовывоз</option>
+                    <option value="Доставка">Доставка</option>
+                </select>
                 <div class="summary-item total">
                     <span>Итого</span>
                     <span class="total-price"><?php 
@@ -193,11 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                         $totalPrice = array_sum($prices);
                         echo $totalPrice; ?> б.р</span>
                 </div>
-                <form method="POST" action="cart.php">
-                    <input type="text" name="deliveryMethod" id="deliveryMethod" style="display: none;"/>
-                    <input type="text" name="deliveryAddress" id="deliveryAddress" style="display: none;"/>
-                    <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
-                </form>
+                <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
+            </form>
             </aside>
         </div>
     </main>
@@ -214,22 +265,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
         const cartSummary = document.getElementById('cartSummary');
         const cartContent = document.getElementById('cartContent');
         const cartContainer = document.getElementById('cartContainer');
-        const deliverySelect = document.getElementById('deliverySelect');
-        const addressInput = document.getElementById('addressInput');
         const deliveryAddress = document.getElementById('deliveryAddress');
         const deliveryContainer = document.querySelector('.delivery-container');
         const deliveryAddressDisplay = document.getElementById('deliveryAddressDisplay');
-
-        // Глобальные переменные для хранения способа доставки и адреса
-        let selectedDeliveryMethod = 'pickup'; // Значение по умолчанию
-        let deliveryAddressValue = ''; // Переменная для адреса доставки
-
-        document.getElementById('deliveryMethod').value = selectedDeliveryMethod;
-        document.getElementById('deliveryAddress').value = deliveryAddressValue;
+        const deliverySelect = document.getElementById('deliverySelect');
+        const addressInput = document.getElementById('addressInput');
 
         cartSummary.addEventListener('click', () => {
             cartContent.classList.toggle('active');
-
             if (cartContent.classList.contains('active')) {
                 const contentHeight = cartContent.scrollHeight; 
                 cartContainer.style.height = `${120 + contentHeight}px`; 
@@ -237,8 +280,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                 cartContainer.style.height = '120px'; 
             }
         });
-
-           
 
     </script>
     <script src="frontjs.js"></script>

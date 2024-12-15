@@ -8,40 +8,42 @@ class AutoPartsManager {
             die("Connection failed: " . $this->dbase->connect_error);
         }
     }
+
     public function sortParts($parts, $sortOption) {
-    if (empty($parts)) {
-        return []; // Возврат пустого массива, если нет запчастей
+        if (empty($parts)) {
+            return []; // Возврат пустого массива, если нет запчастей
+        }
+
+        switch ($sortOption) {
+            case 'date':
+                usort($parts, function($a, $b) {
+                    return strtotime($b['date_receipt']) - strtotime($a['date_receipt']);
+                });
+                break;
+            case 'price_asc':
+                usort($parts, function($a, $b) {
+                    return $a['purchase_price'] - $b['purchase_price'];
+                });
+                break;
+            case 'price_desc':
+                usort($parts, function($a, $b) {
+                    return $b['purchase_price'] - $a['purchase_price'];
+                });
+                break;
+            default:
+                return $parts; // Если сортировка не определена, возврат без изменений
+        }
+        return $parts; // Возврат отсортированного массива
     }
 
-    switch ($sortOption) {
-        case 'date':
-            usort($parts, function($a, $b) {
-                return strtotime($b['date_receipt']) - strtotime($a['date_receipt']);
-            });
-            break;
-        case 'price_asc':
-            usort($parts, function($a, $b) {
-                return $a['purchase_price'] - $b['purchase_price'];
-            });
-            break;
-        case 'price_desc':
-            usort($parts, function($a, $b) {
-                return $b['purchase_price'] - $a['purchase_price'];
-            });
-            break;
-        default:
-            return $parts; // Если сортировка не определена, возврат без изменений
-    }
-    return $parts; // Возврат отсортированного массива
-}
     // Метод для отображения запчастей
     public function renderTable($parts, $customerId) {
         $output = '';
-    
+
         foreach ($parts as $part) {
             $output .= '<div class="part-card">';
             $output .= '<div class="part-image-container">';
-    
+
             // Вывод фото в формате BLOB
             if (!empty($part['photo'])) {
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -51,12 +53,12 @@ class AutoPartsManager {
             } else {
                 $output .= 'Изображение недоступно';
             }
-    
+
             $output .= '</div>'; // .part-image-container
             $output .= '<div class="part-details">';
             
             // Название запчасти, марка и модель
-            $output .= '<h3>' . htmlspecialchars($part['name_parts']) . ' (' . htmlspecialchars($part['brand']) . ' ' . htmlspecialchars($part['model'] . ' '. htmlspecialchars($part['brand'])) . ')</h3>';
+            $output .= '<h3>' . htmlspecialchars($part['name_parts']) . ' (' . htmlspecialchars($part['brand']) . ' ' . htmlspecialchars($part['model'] . ' ' . htmlspecialchars($part['year_production'])) .  ')</h3>';
             
             // Серый текст для характеристик
             $output .= '<p style="color: gray;"><strong>Артикул:</strong> ' . htmlspecialchars($part['article']) . '</p>';
@@ -67,7 +69,7 @@ class AutoPartsManager {
             
             // Цена размещена справа
             $output .= '<p class="part-price" style="float: right;">' . htmlspecialchars($part['purchase_price']) . ' р.</p>';
-    
+
             // Вывод описания
             if (!empty($part['description']) && $this->is_json($part['description'])) {
                 $descriptionData = json_decode($part['description'], true);
@@ -75,10 +77,10 @@ class AutoPartsManager {
             } else {
                 $output .= '<p><strong>Описание:</strong> недоступно</p>';
             }
-    
+
             // Вывод состояния
             $output .= '<p style="color: gray;"><strong>Состояние:</strong> ' . htmlspecialchars($part['condition']) . '</p>';
-    
+
             // Проверка наличия запчасти в корзине
             $query = "SELECT * FROM cart_auto_parts WHERE idcart = (SELECT id FROM cart WHERE idcustomer = ?) AND idautoparts = ?";
             $stmt = mysqli_prepare($this->dbase, $query);
@@ -86,8 +88,9 @@ class AutoPartsManager {
             mysqli_stmt_bind_param($stmt, 'ii', $customerId, $partId);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
-    
+
             // Формы для управления корзиной
+            if(!isset($_SESSION['orders'] ))
             if (isset($_SESSION['cart'])) {
                 $output .= '<form method="POST" action="cart.php">';
                 $output .= '<input type="hidden" name="part_id" value="' . htmlspecialchars($part['id']) . '">';
@@ -105,13 +108,14 @@ class AutoPartsManager {
                 $output .= '<button type="submit" name="add_to_cart" class="add-to-cart-btn">Добавить в корзину</button>';
                 $output .= '</form>';
             }
-    
+
             $output .= '</div>'; // .part-details
             $output .= '</div>'; // .part-card
         }
-    
+
         return $output;
     }
+
     public function is_json($string) {
         return is_string($string) && !empty($string) && ($string[0] === '{' || $string[0] === '[') && json_last_error() === JSON_ERROR_NONE;
     }
@@ -144,6 +148,7 @@ class AutoPartsManager {
             SELECT ap.*, c.brand, c.model, c.year_production, c.date_receipt, engine_volume, fuel_type, transmission_type, body_type
             FROM auto_parts ap
             JOIN cars c ON ap.idcar = c.id
+            WHERE ap.idorder IS NULL
         ";
 
         $result = $this->dbase->query($query);
@@ -163,10 +168,14 @@ class AutoPartsManager {
     }
 
     public function fetchParts($searchConditions) {
-        $query = "SELECT ap.id,name_parts, article, ap.`condition`, ap.purchase_price, description, idcar, ap.idgarage, photo, idorder, status, brand, model, year_production, VIN_number,  mileage, date_receipt, engine_volume, fuel_type, transmission_type, body_type FROM auto_parts ap JOIN cars c ON ap.idcar = c.id";
-        
+        $query = "SELECT ap.id, name_parts, article, ap.`condition`, ap.purchase_price, description, idcar, ap.idgarage, photo, idorder, status, brand, model, year_production, VIN_number, mileage, date_receipt, engine_volume, fuel_type, transmission_type, body_type 
+                  FROM auto_parts ap 
+                  JOIN cars c ON ap.idcar = c.id ";
+
         if (!empty($searchConditions)) {
-            $query .= " WHERE " . implode(" AND ", $searchConditions);
+            $query .= " WHERE ap.idorder IS NULL AND " . implode(" AND ", $searchConditions);
+        } else {
+            $query .= " WHERE ap.idorder IS NULL"; // Добавлено условие по умолчанию
         }
 
         $result = mysqli_query($this->dbase, $query);
@@ -182,4 +191,5 @@ class AutoPartsManager {
         return $parts;
     }
 }
+
 ?>
