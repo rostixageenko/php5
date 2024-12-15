@@ -36,7 +36,7 @@ if (isset($_SESSION['user_id'])) {
         // Шаг 3: Получаем полную информацию о запчастях
         if (!empty($partIds)) {
             $partIdsString = implode(',', $partIds); // Преобразуем массив в строку для SQL-запроса
-            $sql = "SELECT ap.id,name_parts, article, ap.`condition`, ap.purchase_price, description, idcar, ap.idgarage, photo, idorder, status, brand, model, year_production, VIN_number,  mileage, date_receipt, engine_volume, fuel_type, transmission_type, body_type FROM auto_parts ap join cars c on ap.idcar=c.id  WHERE ap.id IN ($partIdsString)";
+            $sql = "SELECT ap.id, name_parts, article, ap.`condition`, ap.purchase_price, description, idcar, ap.idgarage, photo, idorder, status, brand, model, year_production, VIN_number, mileage, date_receipt, engine_volume, fuel_type, transmission_type, body_type FROM auto_parts ap JOIN cars c ON ap.idcar=c.id WHERE ap.id IN ($partIdsString)";
             $partsResult = mysqli_query($db, $sql);
 
             $parts = [];
@@ -49,8 +49,8 @@ if (isset($_SESSION['user_id'])) {
 
         // Шаг 4: Отображаем запчасти с помощью renderTable
         $autoPartsManager = new AutoPartsManager();
-        $_SESSION['cart']=1;
-        $part_cart = $autoPartsManager->renderTable($parts,$customerId);
+        $_SESSION['cart'] = 1;
+        $part_cart = $autoPartsManager->renderTable($parts, $customerId);
     } else {
         $part_cart = []; // Если корзина не найдена
     }
@@ -71,23 +71,23 @@ if (isset($_SESSION['user_id'])) {
     <title>Корзина</title>
     <link rel="stylesheet" href="style.css">
     <style>
-    .success, .error {
-            color: white; /* Белый цвет текста */
+        .success, .error {
+            color: white;
             padding: 10px;
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            display: none; /* Скрыто по умолчанию */
-            border-radius: 8px; /* Скругленные края */
+            display: none;
+            border-radius: 8px;
         }
         .success {
-            background: rgba(76, 175, 80, 0.8); /* Прозрачный фон */
+            background: rgba(76, 175, 80, 0.8);
             border: 1px solid #3c763d;
         }
         .error {
-            background: rgba(192, 57, 43, 0.8); /* Прозрачный фон */
+            background: rgba(192, 57, 43, 0.8);
             border: 1px solid #a94442;
         }
     </style>
@@ -114,10 +114,7 @@ if (isset($_SESSION['user_id'])) {
 
                 <div class="cart-content" id="cartContent">
                     <div class="cart-items">
-                        <?php
-                        // Отображаем запчасти
-                        echo $part_cart;
-                        ?>
+                        <?php echo $part_cart; ?>
                     </div>
                 </div>
             </div>
@@ -128,8 +125,8 @@ if (isset($_SESSION['user_id'])) {
                     <option value="pickup">Самовывоз</option>
                     <option value="delivery">Доставка</option>
                 </select>
-                <div class="address-input" id="addressInput">
-                    <input type="text" placeholder="Введите адрес доставки" />
+                <div class="address-input" id="addressInput" style="display: none;">
+                    <input type="text" id="deliveryAddress" placeholder="Введите адрес доставки" required />
                 </div>
             </div>
         </div>
@@ -138,18 +135,21 @@ if (isset($_SESSION['user_id'])) {
             <aside class="order-summary">
                 <h2>Информация о заказе</h2>
                 <div class="summary-item">
-                    <span>Товары, <?php echo count($parts); ?> шт.</span>
-                    <span><!-- Здесь можно посчитать общую сумму товаров --></span>
+                    <span>Товары:</span>
+                    <span><?php echo count($parts); ?> шт.</span>
+                </div>
+                <div class="summary-item">
+                    <span>Способ доставки:</span>
+                    <span id="deliveryMethodDisplay">Самовывоз</span>
                 </div>
                 <div class="summary-item total">
                     <span>Итого</span>
-                    <span class="total-price"><?php $prices = array_column($parts, 'purchase_price');
-                                                    // Вычисление суммы
-                                                    $totalPrice = array_sum($prices);
-                                                    echo $totalPrice?>
-                     б.р</span>
+                    <span class="total-price"><?php 
+                        $prices = array_column($parts, 'purchase_price');
+                        $totalPrice = array_sum($prices);
+                        echo $totalPrice; ?> б.р</span>
                 </div>
-                <button class="custom-button-users" id="checkout">Заказать</button>
+                <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
             </aside>
         </div>
     </main>
@@ -163,56 +163,74 @@ if (isset($_SESSION['user_id'])) {
     </footer>
 
     <script>
-const cartSummary = document.getElementById('cartSummary');
-    const cartContent = document.getElementById('cartContent');
-    const cartContainer = document.getElementById('cartContainer');
-    const deliverySelect = document.getElementById('deliverySelect');
-    const addressInput = document.getElementById('addressInput');
-    const deliveryContainer = document.querySelector('.delivery-container');
+        const cartSummary = document.getElementById('cartSummary');
+        const cartContent = document.getElementById('cartContent');
+        const cartContainer = document.getElementById('cartContainer');
+        const deliverySelect = document.getElementById('deliverySelect');
+        const addressInput = document.getElementById('addressInput');
+        const deliveryAddress = document.getElementById('deliveryAddress');
+        const deliveryContainer = document.querySelector('.delivery-container');
+        const deliveryAddressDisplay = document.getElementById('deliveryAddressDisplay');
 
-    cartSummary.addEventListener('click', () => {
-        cartContent.classList.toggle('active');
+        // Глобальные переменные для хранения способа доставки и адреса
+        let selectedDeliveryMethod = 'pickup'; // Значение по умолчанию
+        let deliveryAddressValue = ''; // Переменная для адреса доставки
 
-        if (cartContent.classList.contains('active')) {
-            const contentHeight = cartContent.scrollHeight; // Получаем высоту содержимого
-            cartContainer.style.height = `${120 + contentHeight}px`; // Увеличиваем высоту контейнера
-        } else {
-            cartContainer.style.height = '120px'; // Сбрасываем высоту
+        cartSummary.addEventListener('click', () => {
+            cartContent.classList.toggle('active');
+
+            if (cartContent.classList.contains('active')) {
+                const contentHeight = cartContent.scrollHeight; 
+                cartContainer.style.height = `${120 + contentHeight}px`; 
+            } else {
+                cartContainer.style.height = '120px'; 
+            }
+        });
+
+        deliverySelect.addEventListener('change', () => {
+            selectedDeliveryMethod = deliverySelect.value; // Обновляем глобальную переменную
+            document.getElementById('deliveryMethodDisplay').textContent = selectedDeliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз';
+            if (deliverySelect.value === 'delivery') {
+                addressInput.style.display = 'block';
+                adjustDeliveryContainerHeight(); 
+            } else {
+                addressInput.style.display = 'none';
+                resetDeliveryContainerHeight();
+            }
+        });
+
+        // Функция для увеличения высоты контейнера
+        function adjustDeliveryContainerHeight() {
+            const contentHeight = deliveryContainer.scrollHeight; 
+            deliveryContainer.style.height = `${contentHeight}px`; 
         }
-    });
 
-
-    deliverySelect.addEventListener('change', () => {
-        if (deliverySelect.value === 'delivery') {
-            addressInput.style.display = 'block';
-            adjustDeliveryContainerHeight(); 
-        } else {
-            addressInput.style.display = 'none';
-            resetDeliveryContainerHeight();
+        // Функция для сброса высоты контейнера
+        function resetDeliveryContainerHeight() {
+            deliveryContainer.style.height = '140px'; 
         }
-    });
+        deliverySelect.addEventListener('change', () => {
+            if (deliverySelect.value === 'delivery') {
+                addressInput.style.display = 'block';
+            } else {
+                addressInput.style.display = 'none';
+            }
+        });    
 
-    // Функция для увеличения высоты контейнера
-    function adjustDeliveryContainerHeight() {
-        const contentHeight = deliveryContainer.scrollHeight; 
-        deliveryContainer.style.height = `${contentHeight}px`; 
-    }
+        deliveryAddress.addEventListener('input', () => {
+            deliveryAddressValue = deliveryAddress.value; // Обновляем адрес доставки
+            deliveryAddressDisplay.textContent = deliveryAddressValue; // Отображаем введённый адрес
+        });
 
-    // Функция для сброса высоты контейнера
-    function resetDeliveryContainerHeight() {
-        deliveryContainer.style.height = '140px'; 
-    }
-    deliverySelect.addEventListener('change', () => {
-        if (deliverySelect.value === 'delivery') {
-            addressInput.style.display = 'block';
-        } else {
-            addressInput.style.display = 'none';
-        }
-    });
-
-    
+        document.getElementById('checkout').addEventListener('click', () => {
+            if (selectedDeliveryMethod === 'delivery' && !deliveryAddressValue) {
+                alert('Пожалуйста, введите адрес доставки.'); // Сообщение об ошибке
+                return;
+            }
+            // Отправка формы или выполнение дальнейших действий
+            alert('Заказ оформлен!'); // Пример уведомления
+        });
     </script>
-
-<script src="frontjs.js"></script>
+    <script src="frontjs.js"></script>
 </body>
 </html>

@@ -974,7 +974,7 @@ h1 {
   padding: 15px;
   margin-top: 20px;
   margin-right: 30px;
-  height: 180px;
+  height: 200px;
   width: 300px;
 }
 
@@ -1040,6 +1040,7 @@ h1 {
 }
 
 .cart-order-address{
+  
   flex: 1;
   background-color: #e6e9ee;
 }
@@ -1153,6 +1154,10 @@ width: 92.7%;
 }
 
 
-
+.order-form {
+  flex: 1;
+  background-color: #e6e9ee;
+  border: none; /* Убираем границы */
+}
 
 
