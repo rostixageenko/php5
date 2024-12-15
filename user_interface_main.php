@@ -6,11 +6,48 @@ if (session_status() === PHP_SESSION_NONE) {
 include_once('server.php');
 include_once('parts.php');
 
-// Подсчет количества запчастей
-$numResults = count($parts);
 
-// Закрываем соединение с БД
-$db->close();
+
+// Подсчет количества запчастей
+$numResults = count($part);
+
+
+$login = $_SESSION['login'];
+$user_id = $_SESSION['user_id'];
+
+// Используем подготовленное выражение для безопасного выполнения запроса
+$sql = 'SELECT * FROM customers WHERE login = ?';
+$stmt = mysqli_prepare($db, $sql);
+
+if ($stmt) {
+    // Привязываем параметр
+    mysqli_stmt_bind_param($stmt, 's', $login);
+    
+    // Выполняем запрос
+    mysqli_stmt_execute($stmt);
+    
+    // Получаем результат
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        if ($row) {
+            $customerId = $row['id'];
+            $_SESSION['customerId']= $customerId;
+        } else {
+            // Обработка случая, если пользователь не найден
+            die("Пользователь не найден.");
+        }
+    } else {
+        die("Ошибка выполнения запроса: " . mysqli_error($db));
+    }
+
+    // Закрываем подготовленное выражение
+    mysqli_stmt_close($stmt);
+} else {
+    die("Ошибка подготовки запроса: " . mysqli_error($db));
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -219,19 +256,21 @@ $db->close();
 
         <div class="catalog-container">
             <h2>Каталог запчастей</h2>
-            <div class="sort_container">
-                <div class="custom_input-group">
-                    <label for="sort_options">Сортировать:</label>
-                    <select name="sort_options" id="sort_options" class="custom-select">
-                        <option value="date">По дате поступления</option>
-                        <option value="discount">Максимальная скидка</option>
-                        <option value="price_asc">По возрастанию цены</option>
-                        <option value="price_desc">По убыванию цены</option>
-                    </select>
+            <form method="POST" action="">
+            <form method="POST" action="">
+                <div class="sort_container">
+                    <div class="custom_input-group">
+                        <label for="sort_options">Сортировать:</label>
+                        <select name="sort_options" id="sort_options" class="custom-select" onchange="this.form.submit()">
+                            <option value="date" <?php echo (isset($sortOption) && $sortOption === 'date') ? 'selected' : ''; ?>>По дате поступления</option>
+                            <option value="price_asc" <?php echo (isset($sortOption) && $sortOption === 'price_asc') ? 'selected' : ''; ?>>По возрастанию цены</option>
+                            <option value="price_desc" <?php echo (isset($sortOption) && $sortOption === 'price_desc') ? 'selected' : ''; ?>>По убыванию цены</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
+            </form>
             <div class="parts-list">
-                <?php echo $autoPartsManager->renderTable($parts); // Вызов метода отображения запчастей ?>
+                <?php echo $autoPartsManager->renderTable($part, $customerId); // Вызов метода отображения запчастей ?>
             </div>
         </div>
     </div>

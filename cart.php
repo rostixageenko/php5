@@ -1,5 +1,65 @@
 <?php
 
+// if (session_status() === PHP_SESSION_NONE) {
+//     session_start();
+// }
+
+// include_once('server.php'); // подключаем файл с настройками БД и функционалом
+// include_once('parts.php'); // подключаем файл с классом для работы с запчастями
+
+// // Проверка, есть ли пользователь в сессии
+// if (isset($_SESSION['user_id'])) {
+//     $customerId = $_SESSION['customerId'];
+
+//     // Шаг 1: Получаем ID корзины по customerId
+//     $sql = 'SELECT id FROM cart WHERE idcustomer = ?';
+//     $stmt = mysqli_prepare($db, $sql);
+//     mysqli_stmt_bind_param($stmt, 'i', $customerId);
+//     mysqli_stmt_execute($stmt);
+//     $result = mysqli_stmt_get_result($stmt);
+    
+//     if ($row = mysqli_fetch_assoc($result)) {
+//         $cartId = $row['id'];
+
+//         // Шаг 2: Получаем ID запчастей из таблицы cart_auto_parts
+//         $sql = 'SELECT idautoparts FROM cart_auto_parts WHERE idcart = ?';
+//         $stmt = mysqli_prepare($db, $sql);
+//         mysqli_stmt_bind_param($stmt, 'i', $cartId);
+//         mysqli_stmt_execute($stmt);
+//         $result = mysqli_stmt_get_result($stmt);
+
+//         $partIds = [];
+//         while ($row = mysqli_fetch_assoc($result)) {
+//             $partIds[] = $row['idautoparts'];
+//         }
+
+//         // Шаг 3: Получаем полную информацию о запчастях
+//         if (!empty($partIds)) {
+//             $partIdsString = implode(',', $partIds); // Преобразуем массив в строку для SQL-запроса
+//             $sql = "SELECT * FROM auto_parts ap join cars c on ap.idcar=c.id  WHERE ap.id IN ($partIdsString)";
+//             $partsResult = mysqli_query($db, $sql);
+
+//             $parts = [];
+//             while ($row = mysqli_fetch_assoc($partsResult)) {
+//                 $parts[] = $row; // Сохраняем запчасти в массив
+//             }
+//         } else {
+//             $parts = []; // Если нет запчастей, создаем пустой массив
+//         }
+
+//         // Шаг 4: Отображаем запчасти с помощью renderTable
+//         $autoPartsManager = new AutoPartsManager();
+//         $part_cart = $autoPartsManager->renderTable($parts,$customerId);
+//     } else {
+//         $part_cart = []; // Если корзина не найдена
+//     }
+
+//     mysqli_stmt_close($stmt);
+// } else {
+//     // Если пользователь не авторизован, можно перенаправить на страницу входа
+//     header('Location: login.php');
+//     exit();
+// }
 ?>
 
 <!DOCTYPE html>
@@ -26,47 +86,15 @@
             <div class="cart-container" id="cartContainer">
                 <h3 class="cart-title">Корзина</h3>
                 <div class="cart-summary" id="cartSummary">
-                    <span class="item-count">2 товара</span>
+                    <span class="item-count"><?php echo count($parts); ?> товара</span>
                     <span class="arrow">&#9660;</span>
                 </div>
 
                 <div class="cart-content" id="cartContent">
                     <div class="cart-items">
                         <?php
-                        $cartItems = [
-                            [
-                                'name' => 'Масло для массажа тела',
-                                'volume' => '400мл, VOS',
-                                'quantity' => 1,
-                                'price' => '15,31',
-                                'image' => 'path_to_image_1.jpg'
-                            ],
-                            [
-                                'name' => 'Арахисовая паста 1кг',
-                                'volume' => 'DuoDrops',
-                                'quantity' => 1,
-                                'price' => '16,35',
-                                'image' => 'path_to_image_2.jpg'
-                            ]
-                        ];
-
-                        foreach ($cartItems as $item) {
-                            echo "
-                            <div class='cart-item'>
-                                <img src='{$item['image']}' alt='{$item['name']}' class='item-image'>
-                                <div class='item-details'>
-                                    <h2 class='item-title'>{$item['name']}</h2>
-                                    <p class='item-volume'>{$item['volume']}</p>
-                                    <div class='item-quantity'>
-                                        <span>— {$item['quantity']} —</span>
-                                    </div>
-                                </div>
-                                <div class='item-price'>
-                                    <span>{$item['price']} ₽</span>
-                                </div>
-                            </div>
-                            ";
-                        }
+                        // Отображаем запчасти
+                        echo $part_cart;
                         ?>
                     </div>
                 </div>
@@ -84,12 +112,12 @@
             </div>
         </div>
         
-        <div >
+        <div>
             <aside class="order-summary">
                 <h2>Информация о заказе</h2>
                 <div class="summary-item">
-                    <span>Товары, 2 шт.</span>
-                    <span>41,07 ₽</span>
+                    <span>Товары, <?php echo count($parts); ?> шт.</span>
+                    <span><!-- Здесь можно посчитать общую сумму товаров --></span>
                 </div>
                 <div class="summary-item total">
                     <span>Итого</span>
@@ -105,52 +133,7 @@
     </footer>
 
     <script>
-        const cartSummary = document.getElementById('cartSummary');
-        const cartContent = document.getElementById('cartContent');
-        const cartContainer = document.getElementById('cartContainer');
-        const deliverySelect = document.getElementById('deliverySelect');
-        const addressInput = document.getElementById('addressInput');
-        const deliveryContainer = document.querySelector('.delivery-container');
-
-        cartSummary.addEventListener('click', () => {
-            cartContent.classList.toggle('active');
-
-            if (cartContent.classList.contains('active')) {
-                const contentHeight = cartContent.scrollHeight; // Получаем высоту содержимого
-                cartContainer.style.height = `${120 + contentHeight}px`; // Увеличиваем высоту контейнера
-            } else {
-                cartContainer.style.height = '120px'; // Сбрасываем высоту
-            }
-        });
-
-
-        deliverySelect.addEventListener('change', () => {
-            if (deliverySelect.value === 'delivery') {
-                addressInput.style.display = 'block';
-                adjustDeliveryContainerHeight(); 
-            } else {
-                addressInput.style.display = 'none';
-                resetDeliveryContainerHeight();
-            }
-        });
-
-        // Функция для увеличения высоты контейнера
-        function adjustDeliveryContainerHeight() {
-            const contentHeight = deliveryContainer.scrollHeight; 
-            deliveryContainer.style.height = `${contentHeight}px`; 
-        }
-
-        // Функция для сброса высоты контейнера
-        function resetDeliveryContainerHeight() {
-            deliveryContainer.style.height = '140px'; 
-        }
-        deliverySelect.addEventListener('change', () => {
-            if (deliverySelect.value === 'delivery') {
-                addressInput.style.display = 'block';
-            } else {
-                addressInput.style.display = 'none';
-            }
-        });
+        // JavaScript код для функциональности корзины
     </script>
 </body>
 </html>

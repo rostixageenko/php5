@@ -75,6 +75,27 @@ if (count($errors) == 0) {
     header('location: index.php');
     exit();
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['part_id'])) {
+        $partId = intval($_POST['part_id']);
+        
+        // Логика добавления в корзину
+        if (!isset($_SESSION['cart'])) {
+            $_SESSION['cart'] = [];
+        }
+
+        // Проверка, не добавлен ли товар уже
+        if (!in_array($partId, $_SESSION['cart'])) {
+            $_SESSION['cart'][] = $partId;
+            header("Location: some_page.php?success=1"); // Перенаправление с сообщением об успехе
+            exit();
+        } else {
+            header("Location: some_page.php?error=exists"); // Перенаправление с ошибкой
+            exit();
+        }
+    }
+}
 }
 
 // ВХОД ЮЗЕРА
@@ -205,7 +226,7 @@ $rowCount = isset($_POST['row_count']) ? intval($_POST['row_count']) : 25; // П
 
 // Получение данных с учетом ограничения
 $users = $usersTable->fetchLimited($rowCount);
-$parts = $partsTable->fetchLimited($rowCount);
+//$parts = $partsTable->fetchLimited($rowCount);
 $orders = $ordersTable->fetchLimited($rowCount);
 $customers = $customersTable->fetchLimited($rowCount);
 $staffs = $staffsTable->fetchLimited($rowCount);
@@ -290,6 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedTable === 'users' &&isset(
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
     $garage_id = isset($_POST['garage_id']) ? trim($_POST['garage_id']) : ''; // Получаем ID гаража
+
 
     if (!empty($login) && !empty($password)) 
     {
@@ -764,6 +786,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
     if (!empty($_POST['new_garage_id'])) {
         $data['idgarage'] = $_POST['new_garage_id'];
     }
+    if (!empty($_POST['new_status'])) {
+        $data['status'] = $_POST['new_status'];
+    }
 
     $hasError = false;
     if (!empty($_POST['new_article'])){
@@ -1032,6 +1057,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     $partName = isset($_POST['search_part_name']) ? trim($_POST['search_part_name']) : '';
     $carId = isset($_POST['search_car_id']) ? trim($_POST['search_car_id']) : '';
     $garageId = isset($_POST['search_garage_id']) ? trim($_POST['search_garage_id']) : '';
+    $status=isset($_POST['search_status']) ? trim($_POST['search_status']) :'';
     
     $searchConditions = [];
     // Добавляем условия поиска только для заполненных полей
@@ -1050,6 +1076,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     if (!empty($garageId)) {
         $searchConditions[] = "idgarage = " . intval($garageId);
     }
+    if (!empty($status)) { 
+        $searchConditions[] = "status LIKE '%" . mysqli_real_escape_string($db, $partName) . "%'";
+    };
 
     // Выполняем поиск запчастей с учетом условий
     $parts = $partsTable->fetch($searchConditions);
@@ -1296,7 +1325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $messageType = "error";
     } else {
         // Формируем SQL-запрос
-        $sql = "UPDATE orders SET " . implode(", ", $updateFields) . " WHERE id = ?";
+        $sql = "UPDATE orders SET " . implode(", ", $updateFields) . ", datetime = NOW() WHERE id = ?";
         $params[] = $id; // Добавляем ID заказа в параметры
 
         // Подготовка и выполнение запроса
@@ -2684,7 +2713,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 }
 
 // Создаем экземпляр класса AutoPartsManager
-$autoPartsManager = new AutoPartsManager($db);
+$autoPartsManager = new AutoPartsManager();
 
 // Получение запчастей
 // $message = '';
@@ -2708,41 +2737,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
     
     if (!empty($carBrand)) {
         $searchConditions[] = "brand = '" . mysqli_real_escape_string($db, $carBrand) . "'";
+        $_SESSION['brand']="brand = '" . mysqli_real_escape_string($db, $carBrand) . "'";
     }
     if (!empty($carModel)) {
         $searchConditions[] = "model = '" . mysqli_real_escape_string($db, $carModel) . "'";
+        $_SESSION['model']= "model = '" . mysqli_real_escape_string($db, $carModel) . "'";
     }
     if (!empty($sparePart)) {
         $searchConditions[] = "name_parts = '" . mysqli_real_escape_string($db, $sparePart) . "'";
+        $_SESSION['name_parts']="name_parts = '" . mysqli_real_escape_string($db, $sparePart) . "'";
     }
     if (!empty($releaseYearStart)) {
         $searchConditions[] = "year_production >= " . $releaseYearStart;
+        $_SESSION['year_production']="year_production >= " . $releaseYearStart;
     }
     if (!empty($releaseYearEnd)) {
         $searchConditions[] = "year_production <= " . $releaseYearEnd;
+        $_SESSION['year_production']="year_production <= " . $releaseYearEnd;
     }
     if (!empty($body)) {
         $searchConditions[] = "body_type = '" . mysqli_real_escape_string($db, $body) . "'";
+        $_SESSION['body_type']="body_type = '" . mysqli_real_escape_string($db, $body) . "'";
     }
     if (!empty($itemNumber)) {
         $searchConditions[] = "article =  LIKE '%" . mysqli_real_escape_string($db, $itemNumber) . "'";
+        $_SESSION['article']="article =  LIKE '%" . mysqli_real_escape_string($db, $itemNumber) . "'";
     }
     if ($onlyWithPhoto) {
         $searchConditions[] = "photo not null";
+        $_SESSION['photo']= "photo not null";
     }
 
     // Выполняем поиск запчастей с учетом условий
-    $parts = $autoPartsManager->fetchParts($searchConditions);
+    $part = $autoPartsManager->fetchParts($searchConditions);
 
     //Проверка наличия результатов
-    if (empty($parts)) {
+    if (empty($part)) {
         $message = "Запчасти не найдены.";
         $messageType = "error";
     } else {
         $message = ""; // Очистка сообщения, если нашли запчасти
     }
-} else {
-    // Получаем все запчасти, если поиск не выполнен
-    $parts = $autoPartsManager->getAllParts();
+} else{
+    // Получаем все запчасти, если поиск не выполне
+    $part = $autoPartsManager->getAllParts();
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST'&& isset($_POST['add_to_cart'])) {
+    if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
+        $partId = intval($_POST['part_id']);
+        $customerId = intval($_POST['customer_id']);
+        
+        // Получаем ID корзины для данного покупателя
+        $query = "SELECT id FROM cart WHERE idcustomer = $customerId";
+        $result = $db->query($query);
+        
+        if (!$result) {
+            die("Ошибка запроса: " . $db->error);
+        }
+
+        if ($result->num_rows > 0) {
+            $cart = $result->fetch_assoc();
+            $cartId = $cart['id'];
+
+            // Добавляем запись в таблицу cart_auto_part
+            $insertQuery = "INSERT INTO cart_auto_parts (idcart, idautoparts) VALUES ($cartId, $partId)";
+            if ($db->query($insertQuery) === TRUE) {
+                $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+            $actStr = "Покупатель $login добавил запчасть в корзину ID=$partId.";
+            $logger->insertAction($id_user, $actStr);
+            } else {
+                $message= "Ошибка добавления запчасти в корзину: " . $db->error;
+                $messageType = "error";
+            }
+        } else {
+            $message=  "Корзина не найдена для данного покупателя.";
+            $messageType = "error";
+        }
+    } else {
+        $message=  "Не указаны необходимые данные.";
+        $messageType = "error";
+    }
+} 
+
+
+ //сортировка запчастей
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_options'])) {
+    $searchConditions = []; // Инициализируем массив для условий поиска
+
+    // Заполняем массив условиями из сессии, если они существуют
+    if (isset($_SESSION['brand'])) {
+        $searchConditions[] = $_SESSION['brand'];
+    }
+    if (isset($_SESSION['model'])) {
+        $searchConditions[] = $_SESSION['model'];
+    }
+    if (isset($_SESSION['name_parts'])) {
+        $searchConditions[] = $_SESSION['name_parts'];
+    }
+    if (isset($_SESSION['year_production'])) {
+        $searchConditions[] = $_SESSION['year_production'];
+    }
+    if (isset($_SESSION['body_type'])) {
+        $searchConditions[] = $_SESSION['body_type'];
+    }
+    if (isset($_SESSION['article'])) {
+        $searchConditions[] = $_SESSION['article'];
+    }
+    if (isset($_SESSION['photo'])) {
+        $searchConditions[] = $_SESSION['photo'];
+    }
+
+    // Проверка, пуст ли массив $searchConditions
+    if (isset($searchConditions)) {
+        // Если массив не пустой, выполняем запрос
+        $parts = $autoPartsManager->fetchParts($searchConditions);
+    } 
+    $sortOption = isset($_POST['sort_options']) ? $_POST['sort_options'] : 'date'; // Значение по умолчанию
+    // Сортировка запчастей
+    $part = $autoPartsManager->sortParts($part, $_POST['sort_options']);
+}
+
+
 ?>
