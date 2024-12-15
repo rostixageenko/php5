@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 include_once('server.php');
 include_once('parts.php');
 
-
+$_SESSION['cart']=null;
 
 // Подсчет количества запчастей
 $numResults = count($part);
@@ -195,21 +195,21 @@ if ($stmt) {
                         <label for="spare_parts">Выберите запчасть</label>
                         <select name="spare_parts" id="spare_parts">
                             <option value="">Выберите запчасть</option>
-                            <option value="transmission">Коробка передач</option>
-                            <option value="fuel_pump">Топливный насос</option>
-                            <option value="generator">Генератор</option>
-                            <option value="starter">Стартер</option>
-                            <option value="battery">Аккумулятор</option>
-                            <option value="radiator">Радиатор</option>
-                            <option value="shock_absorber">Амортизатор</option>
-                            <option value="spring">Пружина подвески</option>
-                            <option value="suspension_arm">Рычаг подвески</option>
-                            <option value="generator_belt">Ремень генератора</option>
-                            <option value="muffler">Глушитель</option>
-                            <option value="ecu">Блок управления (ECU)</option>
-                            <option value="oil_pressure_sensor">Датчик давления масла</option>
-                            <option value="steering_wheel">Рулевое колесо</option>
-                            <option value="egr_valve">Клапан EGR</option>
+                            <option value="Коробка передач">Коробка передач</option>
+                            <option value="Топливный насос">Топливный насос</option>
+                            <option value="Генератор">Генератор</option>
+                            <option value="Стартер">Стартер</option>
+                            <option value="Аккумулятор">Аккумулятор</option>
+                            <option value="Радиатор">Радиатор</option>
+                            <option value="Амортизатор">Амортизатор</option>
+                            <option value="Пружина Амортизатор">Пружина подвески</option>
+                            <option value="Рычаг подвески">Рычаг подвески</option>
+                            <option value="Ремень генератора">Ремень генератора</option>
+                            <option value="Глушитель">Глушитель</option>
+                            <option value="Блок управления (ECU)">Блок управления (ECU)</option>
+                            <option value="Датчик давления масла">Датчик давления масла</option>
+                            <option value="Рулевое колесо">Рулевое колесо</option>
+                            <option value="Клапан EGR">Клапан EGR</option>
                         </select>
                     </div>
                     <div class="toggle-button" id="toggle-additional-params" style="font-size: 0.8em; cursor: pointer;">
@@ -238,10 +238,6 @@ if ($stmt) {
                         <div class="input-group-users">
                             <label for="item_number">Артикул товара</label>
                             <input type="text" name="item_number" id="item_number">
-                        </div>
-                        <div class="input-group-users">
-                            <input type="checkbox" name="only_with_photo" id="only_with_photo" style="width: 15px; height: 15px; margin-right: 3px;">
-                            <label for="only_with_photo" style="font-size: 0.8em;">Только с фото</label>
                         </div>
                     </div>
 

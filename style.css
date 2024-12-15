@@ -917,6 +917,8 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin-left: 30px;
+  margin-top: 30px;
 }
 
 .cart-item {
@@ -1033,7 +1035,7 @@ h1 {
   opacity: 0;
 }
 .cart-content.active {
-  max-height: 1000px; /* Максимальная высота для анимации */
+  max-height: 10000px; /* Максимальная высота для анимации */
   opacity: 1;
 }
 
@@ -1066,17 +1068,6 @@ h1 {
   overflow: hidden; /* Скрываем содержимое, если оно превышает высоту */
 }
 
-.cart-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
-}
-
-.cart-content.active {
-    max-height: 500px; /* Максимальная высота для анимации */
-    opacity: 1;
-}
 
 .arrow {
     font-size: 18px;
@@ -1149,6 +1140,17 @@ width: 92.7%;
   margin-bottom: 15px;
 }
 
+.remove-btn{
+  background-color: #0158b4; /* Синий фон для кнопки */
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 30%; /* Ширина кнопки 100% */
+  margin-top: 15px; /* Отступ сверху */
+}
 
 
 
