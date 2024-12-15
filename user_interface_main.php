@@ -253,7 +253,6 @@ if ($stmt) {
         <div class="catalog-container">
             <h2>Каталог запчастей</h2>
             <form method="POST" action="">
-            <form method="POST" action="">
                 <div class="sort_container">
                     <div class="custom_input-group">
                         <label for="sort_options">Сортировать:</label>

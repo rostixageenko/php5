@@ -56,11 +56,55 @@ if (isset($_SESSION['user_id'])) {
     }
 
     mysqli_stmt_close($stmt);
-} else {
+}
+else {
     // Если пользователь не авторизован, можно перенаправить на страницу входа
     header('Location: login.php');
     exit();
 }
+
+// Инициализация переменных для способа доставки и адреса
+$selectedDeliveryMethod = 'pickup';
+$deliveryAddress = '';
+
+// Обработка заказа
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
+    $totalPrice = array_sum(array_column($parts, 'purchase_price'));
+    if($totalPrice!==0){
+        $deliveryMethod = $_POST['deliveryMethod'];
+        if (!empty($_POST['deliveryAddress'])){
+            $deliveryAddress = $_POST['deliveryAddress'] ?? null;
+        }
+        $customerId = $_SESSION['customerId'];
+
+
+        // Устанавливаем статус по умолчанию
+        $status = 'Ожидается подтверждение';
+
+        // Вставляем данные в таблицу orders
+        $sql = 'INSERT INTO orders (type_order, status, purchase_price, idcustomer, address) VALUES (?, ?, ?, ?, ?)';
+        $stmt = mysqli_prepare($db, $sql);
+        mysqli_stmt_bind_param($stmt, 'sssis', $deliveryMethod, $status, $totalPrice, $customerId, $deliveryAddress);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            // Очистка корзины после успешного оформления заказа
+            $sql = 'DELETE FROM cart_auto_parts WHERE idcart = ?';
+            $stmt = mysqli_prepare($db, $sql);
+            mysqli_stmt_bind_param($stmt, 'i', $cartId);
+            mysqli_stmt_execute($stmt);
+            $message="Заказ оформлен успешно, ожидайте";
+            $messageType="success";
+        } else {
+            $message="Ошибка оформления заказа";
+            $messageType= "error";
+        }
+    }else{
+        $message="Ошибка: добавьте товар в заказ";
+        $messageType= "error";
+    }
+    
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -149,7 +193,11 @@ if (isset($_SESSION['user_id'])) {
                         $totalPrice = array_sum($prices);
                         echo $totalPrice; ?> б.р</span>
                 </div>
-                <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
+                <form method="POST" action="cart.php">
+                    <input type="text" name="deliveryMethod" id="deliveryMethod" style="display: none;"/>
+                    <input type="text" name="deliveryAddress" id="deliveryAddress" style="display: none;"/>
+                    <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
+                </form>
             </aside>
         </div>
     </main>
@@ -176,6 +224,9 @@ if (isset($_SESSION['user_id'])) {
         let selectedDeliveryMethod = 'pickup'; // Значение по умолчанию
         let deliveryAddressValue = ''; // Переменная для адреса доставки
 
+        document.getElementById('deliveryMethod').value = selectedDeliveryMethod;
+        document.getElementById('deliveryAddress').value = deliveryAddressValue;
+
         cartSummary.addEventListener('click', () => {
             cartContent.classList.toggle('active');
 
@@ -187,49 +238,8 @@ if (isset($_SESSION['user_id'])) {
             }
         });
 
-        deliverySelect.addEventListener('change', () => {
-            selectedDeliveryMethod = deliverySelect.value; // Обновляем глобальную переменную
-            document.getElementById('deliveryMethodDisplay').textContent = selectedDeliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз';
-            if (deliverySelect.value === 'delivery') {
-                addressInput.style.display = 'block';
-                adjustDeliveryContainerHeight(); 
-            } else {
-                addressInput.style.display = 'none';
-                resetDeliveryContainerHeight();
-            }
-        });
+           
 
-        // Функция для увеличения высоты контейнера
-        function adjustDeliveryContainerHeight() {
-            const contentHeight = deliveryContainer.scrollHeight; 
-            deliveryContainer.style.height = `${contentHeight}px`; 
-        }
-
-        // Функция для сброса высоты контейнера
-        function resetDeliveryContainerHeight() {
-            deliveryContainer.style.height = '140px'; 
-        }
-        deliverySelect.addEventListener('change', () => {
-            if (deliverySelect.value === 'delivery') {
-                addressInput.style.display = 'block';
-            } else {
-                addressInput.style.display = 'none';
-            }
-        });    
-
-        deliveryAddress.addEventListener('input', () => {
-            deliveryAddressValue = deliveryAddress.value; // Обновляем адрес доставки
-            deliveryAddressDisplay.textContent = deliveryAddressValue; // Отображаем введённый адрес
-        });
-
-        document.getElementById('checkout').addEventListener('click', () => {
-            if (selectedDeliveryMethod === 'delivery' && !deliveryAddressValue) {
-                alert('Пожалуйста, введите адрес доставки.'); // Сообщение об ошибке
-                return;
-            }
-            // Отправка формы или выполнение дальнейших действий
-            alert('Заказ оформлен!'); // Пример уведомления
-        });
     </script>
     <script src="frontjs.js"></script>
 </body>

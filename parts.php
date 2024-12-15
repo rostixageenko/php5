@@ -56,7 +56,7 @@ class AutoPartsManager {
             $output .= '<div class="part-details">';
             
             // Название запчасти, марка и модель
-            $output .= '<h3>' . htmlspecialchars($part['name_parts']) . ' (' . htmlspecialchars($part['brand']) . ' ' . htmlspecialchars($part['model'] . ' '. htmlspecialchars($part['year_production'])) . ')</h3>';
+            $output .= '<h3>' . htmlspecialchars($part['name_parts']) . ' (' . htmlspecialchars($part['brand']) . ' ' . htmlspecialchars($part['model'] . ' '. htmlspecialchars($part['brand'])) . ')</h3>';
             
             // Серый текст для характеристик
             $output .= '<p style="color: gray;"><strong>Артикул:</strong> ' . htmlspecialchars($part['article']) . '</p>';
