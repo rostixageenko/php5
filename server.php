@@ -233,6 +233,9 @@ $staffs = $staffsTable->fetchLimited($rowCount);
 $suppliers = $suppliersTable->fetchLimited($rowCount);
 $inventory = $inventoryTable->fetchLimited($rowCount);
 $cars = $carsTable->fetchLimited($rowCount);
+$historyOperationsWithAutopart=$historyOperationsWithAutopartTable->fetchLimited($rowCount);
+$historyOperationsWithCars=$historyOperationsWithCarsTable->fetchLimited($rowCount);
+$inventory=$inventoryTable->fetchLimited($rowCount);
 
 $message = "";
 $messageType = "success"; // По умолчанию тип сообщения

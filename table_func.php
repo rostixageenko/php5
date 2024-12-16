@@ -59,7 +59,7 @@ class TableFunction {
 
         if ($stmt->execute()) {
             return [
-                'message' => ' успешно изменена.',
+                'message' => ' Запись успешно изменена.',
                 'type' => 'success'
             ];
         } else {

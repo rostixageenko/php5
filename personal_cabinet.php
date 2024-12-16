@@ -12,13 +12,11 @@ $type_role = $_SESSION['type_role'];
 $message = ""; 
 $messageType = "success";
 
-if ($type_role == 0) {
-    $customerTable = new TableFunction($db, 'customers');
-    $customer = $customerTable->fetch(["login = '$login'"]);
-} elseif ($type_role == 1 || $type_role == 2) {
-    $customerTable = new TableFunction($db, 'staff');
-    $customer = $customerTable->fetch(["login = '$login'"]);
-}
+
+
+$customerTable = new TableFunction($db, 'staff');
+$customer = $customerTable->fetch(["login = '$login'"]);
+
 
 // Проверка, существует ли пользователь
 if (empty($customer)) {
@@ -32,10 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $second_name = trim($_POST['second_name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['contact_phone']);
-    $address = $type_role == 0 ? trim($_POST['address']) : null;
 
     // Валидация данных
-    if (empty($first_name) || empty($second_name) || empty($email) || empty($phone) || ($type_role == 0 && empty($address))) {
+    if (empty($first_name) || empty($second_name) || empty($email) || empty($phone)) {
         $message = "Пожалуйста, заполните все поля.";
         $messageType = "error";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -43,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = "error";
     } else {
         // Проверка существования email
-        $emailCheckStmt = $db->prepare("SELECT COUNT(*) FROM customers WHERE email = ? AND login != ?");
+        $emailCheckStmt = $db->prepare("SELECT COUNT(*) FROM staff WHERE email = ? AND login != ?");
         $emailCheckStmt->bind_param("ss", $email, $login);
         $emailCheckStmt->execute();
         $emailCheckStmt->bind_result($emailCount);
@@ -54,35 +51,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = "Этот email уже используется другим пользователем.";
             $messageType = "error";
         } else {
-            // Подготовка и выполнение запроса обновления данных
-            if ($type_role == 0) {
-                $stmt = $db->prepare("UPDATE customers SET first_name = ?, second_name = ?, email = ?, contact_phone = ?, address = ? WHERE login = ?");
-                $stmt->bind_param("sssssi", $first_name, $second_name, $email, $phone, $address, $login);
-            } else {
-                $stmt = $db->prepare("UPDATE staff SET first_name = ?, second_name = ?, email = ?, contact_phone = ? WHERE login = ?");
-                $stmt->bind_param("ssssi", $first_name, $second_name, $email, $phone, $login);
-            }
+            // Подготовка данных для обновления
+            $data = [
+                'first_name' => $first_name,
+                'second_name' => $second_name,
+                'email' => $email,
+                'contact_phone' => $phone,
+            ];
 
-            try {
-                if ($stmt->execute()) {
-                    $message = "Данные успешно обновлены!";
-                    $_SESSION['first_name'] = $first_name;
-                    $customer = $customerTable->fetch(["login = '$login'"])[0];
-                    $login = $_SESSION['login'];
-                    $id_user = $_SESSION['user_id'];
-                    
-                    $Actstr = "Пользователь $login типа '$type_role' обновил данные о себе";
-                    $dbExecutor->insertAction($id_user, $Actstr);
-                } else {
-                    $message = "Ошибка обновления данных.";
-                    $messageType = "error";
-                }
-            } catch (mysqli_sql_exception $e) {
-                $message = "Ошибка: " . $e->getMessage();
-                $messageType = "error";
-            }
+            // Используем функцию updateRecord для обновления данных
+            $result = $customerTable->updateRecord('staff', 'login', $login, $data);
 
-            $stmt->close();
+            // Обработка результата обновления
+            $message = $result['message'];
+            $messageType = $result['type'];
+
+            // Логируем действие, если обновление прошло успешно
+            if ($messageType === 'success') {
+                $_SESSION['first_name'] = $first_name;
+                $customer = $customerTable->fetch(["login = '$login'"])[0];
+                $id_user = $_SESSION['user_id'];
+
+                $Actstr = "Пользователь $login типа '$type_role' обновил данные о себе";
+                $dbExecutor->insertAction($id_user, $Actstr);
+            }
         }
     }
 }
@@ -134,26 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <header>
 <a href="<?php 
-    if ($type_role == 0)  {
         echo 'admin_interface_main.php'; 
-    } elseif ($type_role == 2) {
-        echo 'employee_interface_main.php'; 
-    }
 ?>">
     <img src="image/logo_new.png" alt="Логотип" class="logo">
 </a>
     <p>
-        <a class="button" href="<?php 
-    if ($type_role == 0) {
-        echo 'user_interface_main.php'; 
-    } elseif ($type_role == 1) {
-        echo 'admin_interface_main.php'; 
-    } elseif ($type_role == 2) {
-        echo 'employee_interface_main.php'; 
-    }
-?>"> Назад</a>  
+        <a class="button" href="admin_interface_main.php"> Назад</a>  
           
-        <a href="index.php?logout='1'" class="custom-button">Выйти</a>
+        <a href="index.php?logout='1'" class="button">Выйти</a>
     </p>
 </header>
 
@@ -183,12 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="contact_phone">Телефон:</label>
                 <input type="tel" name="contact_phone" value="<?php echo htmlspecialchars($customer['contact_phone']); ?>" >
             </div>
-            <?php if ($type_role == 0): ?>
-                <div class="input-group">
-                    <label for="address">Адрес:</label>
-                    <input type="text" name="address" value="<?php echo htmlspecialchars($customer['address']); ?>" >
-                </div>
-            <?php endif; ?>
             <button type="submit" class="btn">Сохранить изменения</button>
         </form>
     </di>

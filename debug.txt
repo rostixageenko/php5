@@ -1,9 +1,1 @@
-Array
-(
-    [name] => photo_2024-02-23_02-38-34.jpg
-    [full_path] => photo_2024-02-23_02-38-34.jpg
-    [type] => image/jpeg
-    [tmp_name] => C:\xampp\tmp\phpB8AF.tmp
-    [error] => 0
-    [size] => 115974
-)
+slava
