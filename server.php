@@ -280,7 +280,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_field'], $_POST[
 // Поиск пользователей
 $searchConditions = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
-   // $file = 'C:\Users\37529\OneDrive\Рабочий стол\log.txt';
     $id = isset($_POST['id']) ? trim($_POST['id']) : '';
     $login = isset($_POST['login']) ? trim($_POST['login']) : '';
     $type_role = isset($_POST['type_role']) ? trim($_POST['type_role']) : '';
@@ -288,7 +287,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
     // Добавляем условия поиска только для заполненных полей
     if (!empty($id)) {
         $searchConditions[] = "id = " . intval($id);
-        //file_put_contents($file, 1);
     }
     if (!empty($login)) {
         $searchConditions[] = "login LIKE '%" . mysqli_real_escape_string($db, $login) . "%'";
@@ -296,14 +294,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_users'])) {
     if (!empty($type_role) && in_array((int)$type_role, [0, 1, 2])) {
         $searchConditions[] = "type_role = " . intval($type_role);
     }
-    //file_put_contents($file, 1);
     $users = $usersTable->fetch($searchConditions);
-    // Проверка, есть ли результаты
+
     if (empty($users)) {
         $message = "Пользователи не найдены.";
-        $messageType = "error"; // Ошибка
+        $messageType = "error"; 
     } else {
-        $message = ""; // Очистка сообщения, если нашли пользователей
+        $message = ""; 
     }
 }
 
@@ -568,21 +565,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['table'] === 'auto_parts'&&isset($_POST['add_part'])) {
     $hasError = false; // Флаг для отслеживания ошибок
     if (isset($_POST['description'])) {
-        $descriptionString = $_POST['description'];
-        $descriptionArray = explode(',', $descriptionString);
+        $description = $_POST['description'];
+        // Преобразование поля description в массив
+        $descriptionArray = [];
         
-        $color = isset($descriptionArray[0]) ? trim($conditionArray[0]) : null;
-        $status = isset($conditionArray[1]) ? trim($conditionArray[1]) : null;
-        $features = array_slice($conditionArray, 2); 
+        // Разделяем на группы
+        $groups = explode(';', $description); // Разделяем по группам
 
-        $descriptionData = [
-            'описание' => array_map('trim', $features)
-        ];
-    
-        // Преобразуем массив в JSON с поддержкой русских символов
-        $descriptionJson = json_encode($descriptionData, JSON_UNESCAPED_UNICODE);
+        foreach ($groups as $group) {
+            // Убираем лишние пробелы и проверяем, если строка не пустая
+            $group = trim($group);
+            if (!empty($group)) {
+                // Разделяем на название группы и элементы
+                $parts = explode(':', $group); // Ожидаем формат "группа: элементы"
+                
+                if (count($parts) === 2) { // Убедимся, что у нас есть название группы и элементы
+                    $groupName = trim($parts[0]); // Название группы
+                    $items = explode(',', trim($parts[1])); // Элементы группы
+                    $descriptionArray[$groupName] = array_map('trim', $items); // Убираем пробелы и добавляем в массив
+                }
+            }
+        }
+
+        // Преобразование массива в JSON
+        $jsonDescription = json_encode($descriptionArray, JSON_UNESCAPED_UNICODE);
     } else {
-        $descriptionJson = null;
+        $jsonDescription = null;
     }
 
     // Проверка на заполнение обязательных полей
@@ -594,9 +602,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
         // Получаем данные из формы
         $name_parts = $_POST['part_name'];
         $article = $_POST['article'];
-        $condition = $_POST['conditionJson'];
+        $condition = $_POST['condition'];
         $purchase_price = $_POST['price'];
-        $description = $descriptionJson ?? null; // Необязательное поле
+        $description = $jsonDescription ?? null; // Необязательное поле
         $idcar = $_POST['car_id'];
         $idgarage = $_POST['garage_id']; // Обязательное поле
 
@@ -639,35 +647,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['table']) && $_GET['tab
             }
         }
 
-        // // Проверка марки машины
-        if (!$hasError) {
-            // Получаем марку машины
-            $stmt = $db->prepare("SELECT brand FROM cars WHERE id = ?");
-            $stmt->bind_param("i", $idcar);
-            $stmt->execute();
-            $stmt->bind_result($carBrand);
-            $stmt->fetch();
-            $stmt->close();
-
-            // Получаем марки машин в гараже
-            $stmt = $db->prepare("SELECT idcar_brands FROM garage_car_brands WHERE idgarage = ?"); // Предполагаем, что есть таблица garage_brands
-            $stmt->bind_param("i", $idgarage);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $allowedBrands = [];
-            while ($row = $result->fetch_assoc()) {
-                $allowedBrands[] = $row['idcar_brands']; // Сохраняем все марки в массив
-            }
-            $stmt->close();
-
-            // Проверяем, содержится ли марка машины в списке марок гаража
-            if (!in_array($carBrand, $allowedBrands)) {
-                $message = "Ошибка: Марка машины не соответствует марке машины гаража.";
-                $messageType = "error"; // Ошибка
-                $hasError = true; // Устанавливаем флаг ошибки
-            }
-        }
 
         // Проверка загрузки файла (необязательное поле)
         $fileData = null;
@@ -2718,9 +2697,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 // Создаем экземпляр класса AutoPartsManager
 $autoPartsManager = new AutoPartsManager();
 
-// Получение запчастей
-$message = '';
-$messageType = 'success';
 
 // Проверка метода запроса и наличие кнопки поиска
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {

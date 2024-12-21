@@ -139,7 +139,8 @@ input, select, textarea {
 
 .input-group input {
   height: 30px;
-  width: 93%;
+  width: 100%; /* Задаем 100% ширины контейнера */
+  max-width: 277px; /* Ограничение максимальной ширины */
   padding: 5px 10px;
   font-size: 16px;
   border-radius: 5px;
@@ -193,21 +194,21 @@ input, select, textarea {
 
 /* Стили для сообщений об ошибках и успехах */
 .error {
-  color: white; /* Белый цвет текста */
-  background: rgba(223, 240, 216, 0.8); /* Прозрачный фон */
+  color: white; 
+  background: rgba(223, 240, 216, 0.8); 
   border: 1px solid #fc3030;
   margin-bottom: 20px;
-  border-radius: 5px; /* Скругленные края */
+  border-radius: 5px; 
   font-weight: bold;
 }
 
 .success {
-  color: white; /* Белый цвет текста */
-  background: rgba(223, 240, 216, 0.8); /* Прозрачный фон */
+  color: white; 
+  background: rgba(223, 240, 216, 0.8);
   border: 1px solid #3c763d;
   margin-bottom: 20px;
-  border-radius: 5px; /* Скругленные края */
-  font-weight: bold; /* Жирный шрифт для лучшей видимости */
+  border-radius: 5px;
+  font-weight: bold;
 }
 
 /* Контейнер для кнопок */

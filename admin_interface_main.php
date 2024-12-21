@@ -53,9 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
     <title>Admin Interface</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .container {
+        /* .container {
             display: flex;
-        }
+        } */
         .form-container {
             margin-right: 20px;
             width: 300px; /* Ширина контейнера формы */
@@ -67,22 +67,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
             flex-shrink: 0; /* Не позволяет элементу сжиматься */
         }
         .success, .error {
-            color: white; /* Белый цвет текста */
+            color: white; 
             padding: 10px;
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            display: none; /* Скрыто по умолчанию */
-            border-radius: 8px; /* Скругленные края */
+            display: none; 
+            border-radius: 8px;
         }
         .success {
-            background: rgba(76, 175, 80, 0.8); /* Прозрачный фон */
+            background: rgba(76, 175, 80, 0.8); 
             border: 1px solid #3c763d;
         }
         .error {
-            background: rgba(192, 57, 43, 0.8); /* Прозрачный фон */
+            background: rgba(192, 57, 43, 0.8);
             border: 1px solid #a94442;
         }
         .input-group {
@@ -237,9 +237,6 @@ function changeColor(select) {
                 <a href="?table=staff">Сотрудники</a>
                 <a href="?table=suppliers">Поставщики</a>
                 <a href="?table=cars">Автомобили</a>
-                <a href="?table=history_operations_with_car">История операций с автомобилями</a>
-                <a href="?table=history_operations_with_autoparts">История операций с запчастями</a>
-                <a href="?table=inventory">Инвентарь</a>
                 
                 <button id="openModal" class="custom-button">Выгрузить таблицу</button> 
                 <button id="openUploadModal" class="custom-button">Загрузить таблицу</button> 
@@ -247,6 +244,7 @@ function changeColor(select) {
         </div>
         <a href="activity_log.php" class="button">История операций</a>
         <a href="sql_queries.php" class="button">SQL Запросы</a>
+        <a href="analitics.php" class="button"> Аналитика</a>
         <a href="personal_cabinet.php" class="button">Личный кабинет</a>
     </div>
     <p><a href="index.php?logout='1'" class="button">Выйти</a></p>
@@ -1110,82 +1108,6 @@ function changeColor(select) {
                     <button type="submit" class="btn" name="edit_car">Изменить автомобиль</button>
                 </form>
 
-                <?php elseif ($selectedTable === 'history_operations_with_autoparts'): ?>
-                <!-- Поиск истории операций с автозапчастями -->
-                <h2>Поиск истории операций</h2>
-                <form method="POST" action="?table=history_operations_with_autoparts&action=search">
-                    <div class="input-group">
-                        <input type="text" name="search_id" placeholder="ID операции (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_type_operation" placeholder="Тип операции (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <textarea name="search_description" placeholder="Описание (необязательно)"></textarea>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_idautoparts" placeholder="ID запчасти (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_idstaff" placeholder="ID сотрудника (необязательно)">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_date_start" placeholder="С какого числа (необязательно)" 
-                            pattern="\d{4}-\d{2}-\d{2}" title="Введите дату в формате ГГГГ-ММ-ДД">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="search_date_end" placeholder="До какого числа (необязательно)" 
-                            pattern="\d{4}-\d{2}-\d{2}" title="Введите дату в формате ГГГГ-ММ-ДД">
-                    </div>
-                    <button type="submit" class="btn" name="search_history">Поиск истории операций</button>
-                </form>
-
-                <h2>Добавить историю операций с запчастями</h2>
-                <form method="POST" action="?table=history_operations_with_autoparts" enctype="multipart/form-data">
-                    <div class="input-group">
-                        <label for="type_operation_parts">Тип операции:</label>
-                        <input type="text" name="type_operation_parts" placeholder="Тип операции (покупка, продажа, установка)" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="description">Описание:</label>
-                        <textarea name="description" placeholder="Описание операции (например, детали, дата и т.д.)" required></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label for="idautoparts">ID запчасти:</label>
-                        <input type="number" name="idautoparts" placeholder="ID запчасти" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="idstaff">ID сотрудника:</label>
-                        <input type="number" name="idstaff" placeholder="ID сотрудника" required>
-                    </div>
-                    <button type="submit" class="btn" name="add_history">Добавить историю операции</button>
-                </form>
-                <!-- Изменение данных истории операций -->
-                <h2>Изменить данные истории операций</h2>
-                <form method="POST" action="?table=history_operations_with_autoparts&action=edit">
-                    <div class="input-group">
-                        <input type="text" name="edit_id" placeholder="ID операции" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="edit_type_operation_parts" placeholder="Тип операции">
-                    </div>
-                    <div class="input-group">
-                        <textarea name="edit_description" placeholder="Описание"></textarea>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="edit_idautoparts" placeholder="ID запчасти">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="edit_idstaff" placeholder="ID сотрудника">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" name="edit_datetime" placeholder="Дата и время операции" 
-                            pattern="\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" 
-                            title="Введите дату и время в формате ГГГГ-ММ-ДД ЧЧ:ММ:СС">
-                    </div>
-                    <button type="submit" class="btn" name="edit_history">Изменить историю операции</button>
-                </form>
-
             <?php else: ?>
 
                 <p>Выберите таблицу из базы данных для отображения соответствующих форм.</p>
@@ -1253,12 +1175,6 @@ function changeColor(select) {
                             $cars = $carsTable->fetchLimited($rowCount);
                         }
                         $carsTable->renderTable($cars, 'Автомобили');
-                        break;
-                    case 'history_operations_with_autoparts':
-                        if (!isset($_POST['search_history']) && !isset($_POST['sort_table'])) {
-                            $cars = $carsTable->fetchLimited($rowCount);
-                        }
-                        $historyOperationsWithAutopartTable->renderTable($historyOperationsWithAutopart, 'История операций с запчастями');
                         break;
                     default:
                         // Обработка случая, когда выбранная таблица не поддерживается

@@ -39,7 +39,6 @@ class AutoPartsManager {
     // Метод для отображения запчастей
     public function renderTable($parts, $customerId) {
         $output = '';
-
         foreach ($parts as $part) {
             $output .= '<div class="part-card">';
             $output .= '<div class="part-image-container">';

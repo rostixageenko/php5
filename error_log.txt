@@ -1,1 +1,1 @@
-Это пример строки для записи в файл.
+Это пример строки для записи в файл.Unknown table 'auto_disassembly_station.logs'
