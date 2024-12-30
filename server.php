@@ -61,7 +61,11 @@ if (count($errors) == 0) {
     $query2 = "SELECT id FROM users 
                 WHERE login = '$login'";
 
+    $query3 = "INSERT INTO cart (idcustomer) 
+                SELECT id FROM customers
+                WHERE login = '$login'";
     mysqli_query($db, $query1); // Выполняем запрос
+    mysqli_query($db, $query3);
     $row = mysqli_fetch_assoc(mysqli_query($db, $query2));
     $id_user= $row["id"];
     $Actstr = "Пользователь $login типа '0' зарегистрировался в системе.";
@@ -1121,7 +1125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
     // Собираем данные из формы
     $data = [
         'type_order' => $_POST['type_order'],
-        'status' => $_POST['status'],
+        'status' => 'Ожидается подтверждение',
         'purchase_price' => $_POST['purchase_price'],
         'idcustomer' => $_POST['id_customer'],
         'address' => $_POST['address']

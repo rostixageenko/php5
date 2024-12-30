@@ -642,16 +642,6 @@ function changeColor(select) {
                         </select>
                     </div>
                     <div class="input-group">
-                        <select name="status" class="custom-select" required  onchange="changeColor(this)">
-                            <option value="" disabled selected style="color: gray;">Статус</option>
-                            <option value="Ожидается подтверждение">Ожидается подтверждение</option>
-                            <option value="Отправка со склада">Отправка со склада</option>
-                            <option value="В пути">В пути</option>
-                            <option value="Готов к получению">Готов к получению</option>
-                            <option value="Отменён">Отменён</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
                         <input type="number" name="purchase_price" placeholder="Итоговая цена заказа" required>
                     </div>
                     <div class="input-group">
@@ -693,6 +683,7 @@ function changeColor(select) {
                             <option value="Отправка со склада">Отправка со склада</option>
                             <option value="В пути">В пути</option>
                             <option value="Готов к получению">Готов к получению</option>
+                            <option value="Получен">Получен</option>
                             <option value="Отменён">Отменён</option>
                         </select>
                     </div>

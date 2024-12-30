@@ -26,32 +26,3 @@ function previewImage(input) {
 };
 
 
-
-
-$(document).ready(function() {
-    $('.delete-btn').click(function(event) {
-        event.preventDefault(); // Предотвращаем стандартное поведение формы
-        var userId = $(this).siblings('input[name="id"]').val(); // Получаем ID пользователя
-
-        if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
-            $.ajax({
-                url: '?table=users&action=delete', // URL вашего обработчика
-                type: 'POST',
-                data: { id: userId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        $('tr[data-id="' + userId + '"]').remove(); // Удаляем строку из таблицы
-                        alert(response.message);
-                    } else {
-                        alert(response.message); // Показываем сообщение об ошибке
-                    }
-                },
-                error: function() {
-                    alert('Произошла ошибка при удалении пользователя.');
-                }
-            })
-        }
-    })
-})
-
