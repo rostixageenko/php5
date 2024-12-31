@@ -1122,14 +1122,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
     $suc = true; // Флаг успешного выполнения
+    $totalPrice = 0; // Переменная для подсчета итоговой суммы
+
     // Собираем данные из формы
     $data = [
         'type_order' => $_POST['type_order'],
         'status' => 'Ожидается подтверждение',
-        'purchase_price' => $_POST['purchase_price'],
-        'idcustomer' => $_POST['id_customer'],
-        'address' => $_POST['address']
+        'purchase_price' => 0, // Изначально 0, обновим позже
+        'idcustomer' => $_POST['id_customer']
     ];
+    
+    // Добавляем адрес только если выбран способ доставки "Доставка"
+    if ($_POST['type_order'] === 'Доставка') {
+        $data['address'] = $_POST['address'];
+    }
+
+    // Проверяем, есть ли запчасти
+    if (!empty($_POST['parts'])) {
+        foreach ($_POST['parts'] as $partId) {
+            // Извлекаем цену запчасти из таблицы auto_parts
+            $partPrice = $ordersTable->getPartPrice($partId);
+
+            if ($partPrice !== null) {
+                $totalPrice += $partPrice; // Суммируем цену запчасти
+            }
+
+            // Проверяем, связана ли запчасть с другим заказом
+            $partCheck = $ordersTable->checkPartOrder($partId);
+
+            if ($partCheck && $partCheck['idorder'] !== null) {
+                $message = 'Ошибка: Запчасть с ID ' . $partId . ' уже заказана.';
+                $messageType = 'error';
+                $suc = false;
+                break; // Прекращаем цикл при ошибке
+            }
+
+            // Обновляем ID заказа в таблице auto_parts
+            $updateData = [
+                'idorder' => null, // Сначала null, обновим позже
+                'status' => 'Заказан' 
+            ];
+            // Здесь мы не можем использовать $orderId, так как он ещё не создан
+            // Вызов функции для обновления автозапчасти
+            $updateResult = $ordersTable->updateRecord('auto_parts', 'id', $partId, $updateData);
+
+            // Проверка результата обновления
+            if ($updateResult['type'] !== 'success') {
+                $message = 'Ошибка при обновлении запчасти: ' . $updateResult['message'];
+                $messageType = 'error';
+                $suc = false;
+                break; // Прекращаем цикл при ошибке
+            }
+        }
+    }
+
+    // Обновляем итоговую сумму заказа
+    $data['purchase_price'] = $totalPrice;
 
     // Вызов функции добавления заказа
     $result = $ordersTable->addRecord($data);
@@ -1137,45 +1185,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
     // Если заказ успешно добавлен
     if ($result) {
         // Получаем ID созданного заказа
-        $orderId = $ordersTable->getLastInsertedId(); // Предполагаем, что эта функция существует
+        $orderId = $ordersTable->getLastInsertedId();
 
-        // Проверяем, есть ли запчасти
-        if (!empty($_POST['parts'])) {
-            foreach ($_POST['parts'] as $partId) {
-                // Проверяем, связана ли запчасть с другим заказом
-                $partCheck = $ordersTable->checkPartOrder($partId); // Предполагаем, что этот метод существует
-
-                if ($partCheck && $partCheck['idorder'] !== null) {
-                    $message = 'Ошибка: Запчасть с ID ' . $partId . ' уже заказана.';
-                    $messageType = 'error';
-                    $suc = false;
-                    break; // Прекращаем цикл при ошибке
-                }
-
-                // Обновляем ID заказа в таблице auto_parts
-                $updateData = [
-                    'idorder' => $orderId
-                ];
-
-                // Вызов функции для обновления автозапчасти
-                $updateResult = $ordersTable->updateRecord('auto_parts', 'id', $partId, $updateData);
-
-                // Проверка результата обновления
-                if ($updateResult['type'] !== 'success') {
-                    $message = 'Ошибка при обновлении запчасти: ' . $updateResult['message'];
-                    $messageType = 'error';
-                    $suc = false;
-                    break; // Прекращаем цикл при ошибке
-                }
-            }
+        // Обновляем все запчасти с новым ID заказа
+        foreach ($_POST['parts'] as $partId) {
+            $updateData = [
+                'idorder' => $orderId,
+                'status' => 'Заказан' 
+            ];
+            $ordersTable->updateRecord('auto_parts', 'id', $partId, $updateData);
         }
 
         // Если все прошло успешно
         if ($suc) {
             $login = $_SESSION['login'];
-        $id_user = $_SESSION['user_id'];
-        $type_role = $_SESSION['type_role'];
-            $actStr = "Пользователь $login типа '$type_role'  добавил заказ id=$$orderId.";
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+            $actStr = "Пользователь $login типа '$type_role' добавил заказ id=$orderId.";
             $dbExecutor->insertAction($id_user, $actStr);    
             $message = 'Заказ добавлен успешно';
             $messageType = 'success'; // Успешное сообщение
@@ -1185,7 +1211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         $messageType = 'error'; // Ошибка
     }
 }
-
 
 //поиск заказов
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_order'])) {
@@ -1254,7 +1279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0; // Получаем ID заказа для удаления    
 
     // Обновляем записи в таблице auto_parts, устанавливая idorder в NULL
-    $updatePartsStmt = $db->prepare("UPDATE auto_parts SET idorder = NULL WHERE idorder = ?");
+    $updatePartsStmt = $db->prepare("UPDATE auto_parts SET idorder = NULL,status= NULL WHERE idorder = ?");
     $updatePartsStmt->bind_param("i", $id);
     $updatePartsStmt->execute();
     $updatePartsStmt->close();
@@ -1279,13 +1304,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     }
 }
 
-//изменение заказа
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['action'] === 'edit' && $_GET['table'] === 'orders') {
     // Извлекаем данные из формы
     $id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
     $typeOrder = isset($_POST['edit_type_order']) ? $_POST['edit_type_order'] : null;
     $status = isset($_POST['edit_status']) ? $_POST['edit_status'] : null;
-    $purchasePrice = isset($_POST['edit_purchase_price']) ? floatval($_POST['edit_purchase_price']) : null;
 
     // Подготовка SQL-запроса для обновления данных
     $updateFields = [];
@@ -1299,10 +1322,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     if ($status !== null) {
         $updateFields[] = "status = ?";
         $params[] = $status;
-    }
-    if ($purchasePrice !== null) {
-        $updateFields[] = "purchase_price = ?";
-        $params[] = $purchasePrice;
     }
 
     // Если нет полей для обновления, выводим сообщение об ошибке
@@ -1326,13 +1345,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 
         // Выполняем запрос
         if ($stmt->execute()) {
-            $login = $_SESSION['login'];
-        $id_user = $_SESSION['user_id'];
-        $type_role = $_SESSION['type_role'];
+            if ($status === 'Получен') {
+                $updateData = [
+                    'status' => 'Продана'
+                ];
+                // Вызов функции для обновления автозапчасти
+                $updateResult = $ordersTable->updateRecord('auto_parts', 'idorder', $id, $updateData);
+            }
 
-        // Логируем действие
-        $actStr = "Пользователь $login типа '$type_role' изменил заказ id=$id.";
-        $dbExecutor->insertAction($id_user, $actStr);
+            $login = $_SESSION['login'];
+            $id_user = $_SESSION['user_id'];
+            $type_role = $_SESSION['type_role'];
+
+            // Логируем действие
+            $actStr = "Пользователь $login типа '$type_role' изменил заказ id=$id.";
+            $dbExecutor->insertAction($id_user, $actStr);
             $message = "Данные заказа успешно изменены.";
             $messageType = "success";
         } else {
@@ -1343,7 +1370,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $stmt->close(); // Закрываем подготовленный запрос
     }
 }
-
 
 
 
@@ -2758,6 +2784,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search_parts'])) {
 
 // Добавление в корзину
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
+    $response = ['success' => false, 'message' => ''];
+
     if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
         $partId = intval($_POST['part_id']);
         $customerId = intval($_POST['customer_id']);
@@ -2767,7 +2795,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
         $result = $db->query($query);
         
         if (!$result) {
-            die("Ошибка запроса: " . $db->error);
+            $response['message'] = "Ошибка запроса: " . $db->error;
+            echo json_encode($response);
+            exit;
         }
 
         if ($result->num_rows > 0) {
@@ -2777,23 +2807,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
             // Добавляем запись в таблицу cart_auto_parts
             $insertQuery = "INSERT INTO cart_auto_parts (idcart, idautoparts) VALUES ($cartId, $partId)";
             if ($db->query($insertQuery) === TRUE) {
-                $login = $_SESSION['login'];
-                $id_user = $_SESSION['user_id'];
-                $type_role = $_SESSION['type_role'];
-                $actStr = "Покупатель $login добавил запчасть в корзину ID=$partId.";
-                $logger->insertAction($id_user, $actStr);
+                $response['success'] = true;
             } else {
-                $message = "Ошибка добавления запчасти в корзину: " . $db->error;
-                $messageType = "error";
+                $response['message'] = "Ошибка добавления запчасти в корзину: " . $db->error;
             }
         } else {
-            $message = "Корзина не найдена для данного покупателя.";
-            $messageType = "error";
+            $response['message'] = "Корзина не найдена для данного покупателя.";
         }
     } else {
-        $message = "Не указаны необходимые данные.";
-        $messageType = "error";
+        $response['message'] = "Не указаны необходимые данные.";
     }
+
+    echo json_encode($response);
+    exit;
 }
 
 // Сортировка запчастей
@@ -2805,6 +2831,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sort_options'])) {
 
 // Удаление из корзины
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_from_cart'])) {
+    $response = ['success' => false, 'message' => ''];
+
     if (isset($_POST['part_id']) && isset($_POST['customer_id'])) {
         $partId = intval($_POST['part_id']);
         $customerId = intval($_POST['customer_id']);
@@ -2813,33 +2841,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_from_cart'])) 
         $result = $db->query($query);
         
         if (!$result) {
-            die("Ошибка запроса: " . $db->error);
-        }
-
-        if ($result->num_rows > 0) {
+            $response['message'] = "Ошибка запроса: " . $db->error;
+        } else if ($result->num_rows > 0) {
             $cart = $result->fetch_assoc();
             $cartId = $cart['id'];
 
             // Удаляем запись из таблицы cart_auto_parts
             $deleteQuery = "DELETE FROM cart_auto_parts WHERE idcart=$cartId AND idautoparts=$partId";
             if ($db->query($deleteQuery) === TRUE) {
-                $login = $_SESSION['login'];
-                $id_user = $_SESSION['user_id'];
-                $type_role = $_SESSION['type_role'];
-                $actStr = "Покупатель $login удалил запчасть из корзины ID=$partId.";
-                $logger->insertAction($id_user, $actStr);
+                $response['success'] = true;
             } else {
-                $message = "Ошибка удаления запчасти из корзины: " . $db->error;
-                $messageType = "error";
+                $response['message'] = "Ошибка удаления запчасти из корзины: " . $db->error;
             }
         } else {
-            $message = "Корзина не найдена для данного покупателя.";
-            $messageType = "error";
+            $response['message'] = "Корзина не найдена для данного покупателя.";
         }
     } else {
-        $message = "Не указаны необходимые данные.";
-        $messageType = "error";
+        $response['message'] = "Не указаны необходимые данные.";
     }
+
+    echo json_encode($response);
+    exit;
 }
 
 

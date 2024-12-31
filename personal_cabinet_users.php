@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Проверка существования email
         $emailCheckStmt = $db->prepare("SELECT COUNT(*) FROM customers WHERE email = ? AND login != ?");
+        $login = $_SESSION['login'];
         $emailCheckStmt->bind_param("ss", $email, $login);
         $emailCheckStmt->execute();
         $emailCheckStmt->bind_result($emailCount);
@@ -54,14 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = "Этот email уже используется другим пользователем.";
             $messageType = "error";
         } else {
-            // Подготовка и выполнение запроса обновления данных
-            if ($type_role == 0) {
                 $stmt = $db->prepare("UPDATE customers SET first_name = ?, second_name = ?, email = ?, contact_phone = ?, address = ? WHERE login = ?");
-                $stmt->bind_param("sssssi", $first_name, $second_name, $email, $phone, $address, $login);
-            } else {
-                $stmt = $db->prepare("UPDATE staff SET first_name = ?, second_name = ?, email = ?, contact_phone = ? WHERE login = ?");
-                $stmt->bind_param("ssssi", $first_name, $second_name, $email, $phone, $login);
-            }
+                $stmt->bind_param("ssssss", $first_name, $second_name, $email, $phone, $address, $login);
 
             try {
                 if ($stmt->execute()) {

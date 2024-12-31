@@ -434,6 +434,17 @@ class TableFunction {
             return null; // Если поставщик не найден, возвращаем null
         }
     }
+    // Метод для получения цены запчасти
+    public function getPartPrice($partId) {
+        $sql = "SELECT purchase_price FROM auto_parts WHERE id = ?";
+        $stmt = mysqli_prepare($this->db, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $partId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        return $row['purchase_price'] ?? null; // Возвращаем цену или null
+    }
+
     public function beginTransaction() {
         $this->db->begin_transaction();
     }

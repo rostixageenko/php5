@@ -30,7 +30,7 @@
 
         <div class="input-group">
             <label_1>Пароль</label_1>
-            <input type="password" name="password_1" required>
+            <input class="input2" type="password" name="password_1" required>
         </div>
 
         <div class="input-group">

@@ -13,11 +13,22 @@ if (!isset($_SESSION['user_id'])) {
 
 $customerId = $_SESSION['customerId'];
 
-// Получаем заказы пользователя
-$sql = 'SELECT o.id, o.type_order, o.status, o.purchase_price, o.datetime 
-        FROM orders o 
-        WHERE o.idcustomer = ? 
-        ORDER BY o.datetime DESC';
+// Определяем статус по умолчанию (в пути)
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : 'in_transit';
+
+// Получаем заказы пользователя в зависимости от статуса
+if ($statusFilter === 'received') {
+    $sql = 'SELECT o.id, o.type_order, o.status, o.purchase_price, o.datetime 
+            FROM orders o 
+            WHERE o.idcustomer = ? AND o.status = "Получен" 
+            ORDER BY o.datetime DESC';
+} else {
+    $sql = 'SELECT o.id, o.type_order, o.status, o.purchase_price, o.datetime 
+            FROM orders o 
+            WHERE o.idcustomer = ? AND o.status != "Получен" 
+            ORDER BY o.datetime DESC';
+}
+
 $stmt = mysqli_prepare($db, $sql);
 mysqli_stmt_bind_param($stmt, 'i', $customerId);
 mysqli_stmt_execute($stmt);
@@ -56,9 +67,14 @@ $_SESSION['orders'] = 1;
     </header>
 
     <main class="custom-main">
-
         <div class="orders-container">
             <h1>Мои заказы</h1>
+            
+            <div class="status-buttons">
+                <a href="?status=in_transit" class="status-button <?php echo $statusFilter === 'in_transit' ? 'active' : ''; ?>">В пути</a>
+                <a href="?status=received" class="status-button <?php echo $statusFilter === 'received' ? 'active' : ''; ?>">Полученные</a>
+            </div>
+
             <?php if (empty($orders)): ?>
                 <p>У вас пока нет заказов.</p>
             <?php else: ?>
@@ -78,7 +94,7 @@ $_SESSION['orders'] = 1;
                                                 year_production, VIN_number, mileage, date_receipt, 
                                                 engine_volume, fuel_type, transmission_type, body_type 
                                           FROM auto_parts ap 
-                                          join cars c on ap.idcar=c.id 
+                                          JOIN cars c ON ap.idcar = c.id 
                                           WHERE ap.idorder = ?";
                             $partsStmt = mysqli_prepare($db, $partsSql);
                             mysqli_stmt_bind_param($partsStmt, 'i', $orderId);

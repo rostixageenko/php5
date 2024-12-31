@@ -64,7 +64,8 @@ else {
 }
 
 
-// Обработка заказа
+// Оформление заказа
+// Оформление заказа
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
     $totalPrice = array_sum(array_column($parts, 'purchase_price'));
     
@@ -106,9 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                 mysqli_stmt_bind_param($stmt, 'i', $customerId);
                 mysqli_stmt_execute($stmt);
                 $partsResult = mysqli_stmt_get_result($stmt);
-                
+
                 while ($row = mysqli_fetch_assoc($partsResult)) {
-                    $data = ['idorder' => $orderID];
+                    $data = [
+                        'idorder' => $orderID,
+                        'status' => 'Заказан' // Обновляем статус на "Заказан"
+                    ];
                     $partsautoTable = new TableFunction($db, 'auto_parts');
                     $partsautoTable->updateRecord('auto_parts', 'id', $row['idautoparts'], $data);
                 }
@@ -145,7 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             $partsResult = mysqli_stmt_get_result($stmt);
 
             while ($row = mysqli_fetch_assoc($partsResult)) {
-                $data = ['idorder' => $orderID];
+                $data = [
+                    'idorder' => $orderID,
+                    'status' => 'Заказан' // Обновляем статус на "Заказан"
+                ];
                 $partsautoTable = new TableFunction($db, 'auto_parts');
                 $partsautoTable->updateRecord('auto_parts', 'id', $row['idautoparts'], $data);
             }
@@ -197,6 +204,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             border: 1px solid #a94442;
         }
     </style>
+    <script>
+        function updateOrderSummary() {
+            const cartItems = document.querySelectorAll('.part-card');
+            const itemCount = cartItems.length;
+            const totalPriceElement = document.getElementById('totalPrice');
+            
+            let totalPrice = 0;
+            cartItems.forEach(item => {
+                const price = parseFloat(item.querySelector('.part-price').innerText) || 0;
+                totalPrice += price;
+            });
+
+            document.getElementById('itemCount').innerText = `${itemCount} товара(ов)`;
+            totalPriceElement.innerText = totalPrice + ' б.р';
+        }
+
+        function removeFromCart(partId, customerId, button) {
+            const formData = new FormData();
+            formData.append('part_id', partId);
+            formData.append('customer_id', customerId);
+            formData.append('delete_from_cart', true);
+
+            fetch('server.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем элемент из DOM
+                    button.closest('.part-card').remove();
+                    // Обновляем количество товаров и итоговую стоимость
+                    updateOrderSummary();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error('Ошибка:', error));
+        }
+    </script>
 </head>
 <body>
     <header class="header-user">
@@ -214,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             <div class="cart-container" id="cartContainer">
                 <h3 class="cart-title">Корзина</h3>
                 <div class="cart-summary" id="cartSummary">
-                    <span class="item-count"><?php echo count($parts); ?> товара</span>
+                    <span class="item-count" id="itemCount"><?php echo count($parts); ?> товара(ов)</span>
                     <span class="arrow">&#9660;</span>
                 </div>
 
@@ -229,11 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
         
         <div>
             <aside class="order-summary">
-                <h2>Информация о заказе</h2>
-                <div class="summary-item">
-                    <span>Товары:</span>
-                    <span><?php echo count($parts); ?> шт.</span>
-                </div>
+                <h2>Информация о заказе</h2> 
                 <form method="POST" action="cart.php">
                 <span>Способ доставки</span>
                 <select class="deliverySelect" id="deliverySelect" name="deliveryMethod">
@@ -242,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                 </select>
                 <div class="summary-item total">
                     <span>Итого</span>
-                    <span class="total-price"><?php 
+                    <span class="total-price" id="totalPrice"><?php 
                         $prices = array_column($parts, 'purchase_price');
                         $totalPrice = array_sum($prices);
                         echo $totalPrice; ?> б.р</span>

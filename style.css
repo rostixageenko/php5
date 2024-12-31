@@ -147,6 +147,7 @@ input, select, textarea {
   border: 1px solid gray;
 }
 
+
 /* Стили для кнопок */
 .btn {
   padding: 10px;
@@ -1195,3 +1196,22 @@ h1 {
   margin: 5px 0; /* Отступы между параграфами */
 }
 
+.status-buttons {
+  margin-bottom: 20px;
+}
+
+.status-button {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  margin-right: 10px;
+  text-decoration: none;
+  color: black;
+  border-radius: 5px;
+}
+
+.status-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}

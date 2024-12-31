@@ -72,7 +72,7 @@ class AutoPartsManager {
             // Вывод описания
             if (!empty($part['description']) && $this->is_json($part['description'])) {
                 $descriptionData = json_decode($part['description'], true);
-                $output .= '<p><strong></strong> <pre>' . htmlspecialchars($this->formatJsonWithoutQuotes($descriptionData)) . '</pre></p>';
+                $output .= '<p style="color: gray;"><strong></strong> <pre>' . htmlspecialchars($this->formatJsonWithoutQuotes($descriptionData)) . '</pre></p>';
             } else {
                 $output .= '<p><strong>Описание:</strong> недоступно</p>';
             }
@@ -91,21 +91,13 @@ class AutoPartsManager {
             // Формы для управления корзиной
             if(!isset($_SESSION['orders'] ))
             if (isset($_SESSION['cart'])) {
-                $output .= '<form method="POST" action="cart.php">';
-                $output .= '<input type="hidden" name="part_id" value="' . htmlspecialchars($part['id']) . '">';
-                $output .= '<input type="hidden" name="customer_id" value="' . htmlspecialchars($customerId) . '">';
-                $output .= '<button type="submit" name="delete_from_cart" class="remove-btn">удалить из корзины</button>';
-                $output .= '</form>';
+                $output .= '<button onclick="removeFromCart(' . htmlspecialchars($part['id']) . ', ' . htmlspecialchars($customerId) . ', this)" class="remove-btn">Удалить из корзины</button>';
             } elseif (mysqli_num_rows($result) > 0) {
                 // Если запчасть уже в корзине
                 $output .= '<button onclick="window.location.href=\'cart.php\'" class="go-to-cart-btn">Перейти в корзину</button>';
             } else {
-                // Форма для добавления в корзину
-                $output .= '<form method="POST" action="user_interface_main.php">';
-                $output .= '<input type="hidden" name="part_id" value="' . htmlspecialchars($part['id']) . '">';
-                $output .= '<input type="hidden" name="customer_id" value="' . htmlspecialchars($customerId) . '">';
-                $output .= '<button type="submit" name="add_to_cart" class="add-to-cart-btn">Добавить в корзину</button>';
-                $output .= '</form>';
+                // Кнопка для добавления в корзину
+                $output .= '<button onclick="addToCart(' . htmlspecialchars($part['id']) . ', ' . htmlspecialchars($customerId) . ', this)" class="add-to-cart-btn">Добавить в корзину</button>';
             }
 
             $output .= '</div>'; // .part-details

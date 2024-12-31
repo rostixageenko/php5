@@ -80,6 +80,28 @@ if ($stmt) {
         }
     </style>
     <script>
+          function addToCart(partId, customerId, button) {
+            const formData = new FormData();
+            formData.append('part_id', partId);
+            formData.append('customer_id', customerId);
+            formData.append('add_to_cart', true);
+
+            fetch('server.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    button.innerText = "Перейти в корзину";
+                    button.setAttribute("onclick", "window.location.href='cart.php' ");
+                    button.setAttribute("class","go-to-cart-btn");
+                } else {
+                    alert(data.message); // Показать сообщение об ошибке
+                }
+            })
+            .catch(error => console.error('Ошибка:', error));
+        }
         const carModels = {
             'Toyota': ['Camry', 'RAV4', 'Highlander', 'Corolla'],
             'Honda': ['Accord', 'CR-V', 'Pilot', 'Civic'],
@@ -244,7 +266,7 @@ if ($stmt) {
 
                     <button type="submit" class="custom-btn_sec" name="search_parts">Поиск запчастей</button>
 
-                    <div class="reset-button" id="reset-params" style="font-size: 0.9em;">
+                    <div class="reset-button" id="reset-params" style="font-size: 0.9em;" onclick="location.reload();">
                         <span class="reset-text">Сбросить</span><span class="cross-icon"> ✖</span>
                     </div>
                 </form>

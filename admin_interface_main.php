@@ -496,7 +496,7 @@ function changeColor(select) {
                         <input type="text" name="search_garage_id" placeholder="ID гаража (необязательно)">
                     </div>
                     <div class="input-group">
-                        <input type="text" name="search_status" placeholder="Статус" required>
+                        <input type="text" name="search_status" placeholder="Статус" >
                     </div>
                     <button type="submit" class="btn" name="search_parts">Поиск запчастей</button>
                 </form>
@@ -642,9 +642,6 @@ function changeColor(select) {
                         </select>
                     </div>
                     <div class="input-group">
-                        <input type="number" name="purchase_price" placeholder="Итоговая цена заказа" required>
-                    </div>
-                    <div class="input-group">
                         <input type="text" name="id_customer" placeholder="ID покупателя" required>
                     </div>
                     <div class="input-group">
@@ -687,10 +684,6 @@ function changeColor(select) {
                             <option value="Отменён">Отменён</option>
                         </select>
                     </div>
-                    <div class="input-group">
-                        <input type="number" name="edit_purchase_price" placeholder="Новая цена покупки">
-                    </div>
-
                     <button type="submit" name="edit_order" class="btn">Изменить</button>
                 </form>
             
