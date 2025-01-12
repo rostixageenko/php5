@@ -108,6 +108,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(192, 57, 43, 0.8);
             border: 1px solid #a94442;
         }
+        .input-group input {
+            height: 30px;
+            width: 1000px;
+            padding: 5px 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid gray;
+        }
     </style>
     <script>
         function hidePopup() {

@@ -56,6 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['json_file'])) {
         /* .container {
             display: flex;
         } */
+
+        .input-group input {
+
+            min-height: 30px;
+            min-width: 277px;
+            padding: 5px 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid gray;
+        }
+
         .form-container {
             margin-right: 20px;
             width: 300px; /* Ширина контейнера формы */
@@ -325,104 +336,104 @@ function changeColor(select) {
         <div class="form-container">
         <h2>Сортировка данных</h2>
         <form method="POST" action="?table=<?php echo htmlspecialchars($selectedTable); ?>">
-    <div class="input-group">
-        <select name="sort_field" id="sort_field" class="custom-select" onchange="changeColor(this)">
-            <option value="" disabled selected >Выберите поле для сортировки</option>
-            <?php
-            // Получаем названия полей для сортировки
-            switch ($selectedTable) {
-                case "users": 
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='login'>Логин</option>";
-                    echo "<option value='type_role'>Тип роли</option>";
-                    break;
+            <div class="input-group">
+                <select name="sort_field" id="sort_field" class="custom-select" onchange="changeColor(this)">
+                    <option value="" disabled selected >Выберите поле для сортировки</option>
+                    <?php
+                    // Получаем названия полей для сортировки
+                    switch ($selectedTable) {
+                        case "users": 
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='login'>Логин</option>";
+                            echo "<option value='type_role'>Тип роли</option>";
+                            break;
+                            
+                        case "auto_parts":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='name_part'>Название запчасти</option>";
+                            echo "<option value='article'>Артикул</option>";
+                            echo "<option value='purchase_price'>Цена</option>";
+                            break;
                     
-                case "auto_parts":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='name_part'>Название запчасти</option>";
-                    echo "<option value='article'>Артикул</option>";
-                    echo "<option value='purchase_price'>Цена</option>";
-                    break;
-            
-                case "orders":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='type_order'>Тип заказа</option>";
-                    echo "<option value='status'>Статус</option>";
-                    echo "<option value='datetime'>Дата и время</option>";
-                    echo "<option value='purchase_price'>Цена</option>";
-                    echo "<option value='idcustomer'>ID клиента</option>";
-                    break;
+                        case "orders":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='type_order'>Тип заказа</option>";
+                            echo "<option value='status'>Статус</option>";
+                            echo "<option value='datetime'>Дата и время</option>";
+                            echo "<option value='purchase_price'>Цена</option>";
+                            echo "<option value='idcustomer'>ID клиента</option>";
+                            break;
+                            
+                        case "customers":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='login'>Логин</option>";
+                            echo "<option value='first_name'>Имя</option>";
+                            echo "<option value='second_name'>Фамилия</option>";
+                            echo "<option value='email'>Email</option>";
+                            echo "<option value='contact_phone'>Телефон</option>";
+                            echo "<option value='address'>Адрес</option>";
+                            break;
                     
-                case "customers":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='login'>Логин</option>";
-                    echo "<option value='first_name'>Имя</option>";
-                    echo "<option value='second_name'>Фамилия</option>";
-                    echo "<option value='email'>Email</option>";
-                    echo "<option value='contact_phone'>Телефон</option>";
-                    echo "<option value='address'>Адрес</option>";
-                    break;
-            
-                case "staff":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='first_name'>Имя</option>";
-                    echo "<option value='second_name'>Фамилия</option>";
-                    echo "<option value='login'>Логин</option>";
-                    echo "<option value='email'>Email</option>";
-                    echo "<option value='contact_phone'>Телефон</option>";
-                    echo "<option value='idpost'>ID должности</option>";
-                    break;
-            
-                case "suppliers":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='name_organization'>Название организации</option>";
-                    echo "<option value='email'>Email</option>";
-                    echo "<option value='contact_phone'>Телефон</option>";
-                    echo "<option value='contact_person'>Контактное лицо</option>";
-                    echo "<option value='address'>Адрес</option>";
-                    break;
-            
-                case "cars":
-                    echo "<option value='id'>ID</option>";
-                    echo "<option value='brand'>Марка</option>";
-                    echo "<option value='model'>Модель</option>";
-                    echo "<option value='year_production'>Год производства</option>";
-                    echo "<option value='VIN_number'>VIN номер</option>";
-                    echo "<option value='purchase_price'>Цена</option>";
-                    echo "<option value='condition'>Состояние</option>";
-                    echo "<option value='idgarage'>ID гаража</option>";
-                    echo "<option value='idsupplier'>ID поставщика</option>";
-                    echo "<option value='mileage'>Пробег</option>";
-                    echo "<option value='date_receipt'>Дата получения</option>";
-                    echo "<option value='engine_volume'>Объем двигателя</option>";
-                    echo "<option value='fuel_type'>Тип топлива</option>";
-                    echo "<option value='transmission_type'>Тип трансмиссии</option>";
-                    echo "<option value='body_type'>Тип кузова</option>";
-                    break;
-                    case "history_operations_with_autoparts":
-                        echo "<option value='id'>ID операции</option>";
-                        echo "<option value='type_operation_parts'>Тип операции</option>";
-                        echo "<option value='description'>Описание</option>";
-                        echo "<option value='datetime'>Дата и время операции</option>";
-                        echo "<option value='idautoparts'>ID запчасти</option>";
-                        echo "<option value='idstaff'>ID сотрудника</option>";
-                        break;
-            }
-            // Добавьте другие таблицы при необходимости
-            ?>
-        </select>
-    </div>
-    <div class="input-group">
-        <select name="sort_order" id="sort_order" class="custom-select" onchange="changeColor(this)">
-        <option value="" disabled selected >Выберите порядок сортировки</option>
-            <option value="ASC">По возрастанию</option>
-            <option value="DESC">По убыванию</option>
-        </select>
-    </div>
-    <div class="input-group">
-        <button type="submit" class="btn" name="sort_table">Отсортировать</button>
-    </div>
-</form>
+                        case "staff":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='first_name'>Имя</option>";
+                            echo "<option value='second_name'>Фамилия</option>";
+                            echo "<option value='login'>Логин</option>";
+                            echo "<option value='email'>Email</option>";
+                            echo "<option value='contact_phone'>Телефон</option>";
+                            echo "<option value='idpost'>ID должности</option>";
+                            break;
+                    
+                        case "suppliers":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='name_organization'>Название организации</option>";
+                            echo "<option value='email'>Email</option>";
+                            echo "<option value='contact_phone'>Телефон</option>";
+                            echo "<option value='contact_person'>Контактное лицо</option>";
+                            echo "<option value='address'>Адрес</option>";
+                            break;
+                    
+                        case "cars":
+                            echo "<option value='id'>ID</option>";
+                            echo "<option value='brand'>Марка</option>";
+                            echo "<option value='model'>Модель</option>";
+                            echo "<option value='year_production'>Год производства</option>";
+                            echo "<option value='VIN_number'>VIN номер</option>";
+                            echo "<option value='purchase_price'>Цена</option>";
+                            echo "<option value='condition'>Состояние</option>";
+                            echo "<option value='idgarage'>ID гаража</option>";
+                            echo "<option value='idsupplier'>ID поставщика</option>";
+                            echo "<option value='mileage'>Пробег</option>";
+                            echo "<option value='date_receipt'>Дата получения</option>";
+                            echo "<option value='engine_volume'>Объем двигателя</option>";
+                            echo "<option value='fuel_type'>Тип топлива</option>";
+                            echo "<option value='transmission_type'>Тип трансмиссии</option>";
+                            echo "<option value='body_type'>Тип кузова</option>";
+                            break;
+                            case "history_operations_with_autoparts":
+                                echo "<option value='id'>ID операции</option>";
+                                echo "<option value='type_operation_parts'>Тип операции</option>";
+                                echo "<option value='description'>Описание</option>";
+                                echo "<option value='datetime'>Дата и время операции</option>";
+                                echo "<option value='idautoparts'>ID запчасти</option>";
+                                echo "<option value='idstaff'>ID сотрудника</option>";
+                                break;
+                    }
+                    // Добавьте другие таблицы при необходимости
+                    ?>
+                </select>
+            </div>
+            <div class="input-group">
+                <select name="sort_order" id="sort_order" class="custom-select" onchange="changeColor(this)">
+                <option value="" disabled selected >Выберите порядок сортировки</option>
+                    <option value="ASC">По возрастанию</option>
+                    <option value="DESC">По убыванию</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <button type="submit" class="btn" name="sort_table">Отсортировать</button>
+            </div>
+        </form>
 
             <?php if ($selectedTable === 'users'): ?>
                 <!-- Поиск пользователей -->
@@ -453,16 +464,16 @@ function changeColor(select) {
                         <input type="password" name="password" placeholder="Пароль" required>
                     </div>
                     <div class="input-group">
-    <select name="type_role" required onchange="toggleGarageInput(this)" class="custom-select">
-        <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
-        <option value="0">Покупатель</option>
-        <option value="1">Администратор</option>
-        <option value="2">Сотрудник</option>
-    </select>
-</div>
-<div class="input-group garage-input">
-    <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
-</div>
+                        <select name="type_role" required onchange="toggleGarageInput(this)" class="custom-select">
+                            <option value="" disabled selected style="color: gray;">Выберите тип роли</option>
+                            <option value="0">Покупатель</option>
+                            <option value="1">Администратор</option>
+                            <option value="2">Сотрудник</option>
+                        </select>
+                    </div>
+                    <div class="input-group garage-input">
+                        <input type="text" name="garage_id" placeholder="ID гаража (для сотрудника)">
+                    </div>
                     <button type="submit" name="add_users" class="btn">Добавить</button>
                 </form>
                     <!-- Изменить пароль пользователя -->

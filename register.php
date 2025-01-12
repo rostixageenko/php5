@@ -14,6 +14,33 @@
             padding: 10px;
             border-radius: 8px; /* Скругленные края */
         }
+        .btn {
+            background-color: #4CAF50; /* Зеленый фон кнопки */
+            color: white; /* Белый текст */
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #45a049; /* Темнее при наведении */
+        }
+        
+        .input-group {
+            margin-bottom: 15px; /* Отступы между полями ввода */
+        }
+
+        .input-group input {
+            height: 30px;
+            width: 100%; /* Задаем 100% ширины контейнера */
+            max-width: 430px;/* Ограничение максимальной ширины */
+            padding: 5px 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid gray;
+        }
     </style>
 </head>
 <body>

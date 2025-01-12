@@ -28,9 +28,9 @@ main {
 
 /* Контейнер для таблиц */
 .tables-container {
-  background-color: #e0e0e0; /* Серый фон под таблицами */
-  padding: 20px; /* Внутренние отступы для контейнера */
-  border-radius: 10px; /* Скругляем углы */
+  background-color: #e0e0e0; 
+  padding: 20px;
+  border-radius: 10px; 
 }
 
 
@@ -137,15 +137,15 @@ input, select, textarea {
   color: rgb(0, 0, 0); /* Устанавливаем цвет метки на серый */
 }
 
-.input-group input {
+/* .input-group input {
   height: 30px;
-  width: 100%; /* Задаем 100% ширины контейнера */
-  /* max-width: 277px; Ограничение максимальной ширины */
+  width: 100%; 
+  max-width: 277px;
   padding: 5px 10px;
   font-size: 16px;
   border-radius: 5px;
   border: 1px solid gray;
-}
+} */
 
 
 /* Стили для кнопок */
