@@ -1,1 +1,9 @@
-hello
+Array
+(
+    [name] => images.jpeg
+    [full_path] => images.jpeg
+    [type] => image/jpeg
+    [tmp_name] => C:\xampp\tmp\php89EB.tmp
+    [error] => 0
+    [size] => 4961
+)
