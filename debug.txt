@@ -1,9 +1,9 @@
 Array
 (
-    [name] => images.jpeg
-    [full_path] => images.jpeg
+    [name] => IMG_5721 (2) (1) (2).jpg
+    [full_path] => IMG_5721 (2) (1) (2).jpg
     [type] => image/jpeg
-    [tmp_name] => C:\xampp\tmp\php89EB.tmp
+    [tmp_name] => C:\xampp\tmp\phpC19B.tmp
     [error] => 0
-    [size] => 4961
+    [size] => 158893
 )

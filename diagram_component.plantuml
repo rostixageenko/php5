@@ -1,0 +1,24 @@
+@startuml
+skinparam componentStyle uml2
+
+component AutorizedUser
+component Student
+component Professor
+component Tasks
+component TaskServerExe
+component Autorization
+component MarksControl
+component NotificationSystem
+
+' Интерфейсы (как на рисунке)
+[AutorizedUser] --> [Autorization]
+[Student] --> [AutorizedUser]
+[Student] --> [Tasks]
+[Professor] --> [Tasks]
+[Professor] --> [MarksControl]
+[Professor] --> [NotificationSystem]
+[Tasks] --> [TaskServerExe]
+[NotificationSystem] --> [MarksControl]
+[NotificationSystem] --> [Professor]
+
+@enduml

@@ -1,32 +1,22 @@
 <?php
 include('server.php');
 
+// Query to get the number of sold parts and total profit by part name
 $query = "
-    SELECT *
-    FROM (
-        SELECT c.brand AS car_brand, COUNT(*) AS count_parts
-        FROM auto_parts ap
-        JOIN cars c ON c.id = ap.idcar
-        JOIN orders o ON o.id = ap.idorder
-        WHERE ap.status IN ('Продана', 'продана', 'продано', 'Продано')
-          AND o.datetime >= NOW() - INTERVAL 3 MONTH
-        GROUP BY c.brand
-    ) AS t1
-    JOIN (
-        SELECT c.brand AS car_brand, SUM(ap.purchase_price) AS total_price
-        FROM auto_parts ap
-        JOIN orders o ON o.id = ap.idorder
-        JOIN cars c ON c.id = ap.idcar
-        WHERE ap.status IN ('Продана', 'продана', 'продано', 'Продано')
-          AND o.datetime >= NOW() - INTERVAL 3 MONTH
-        GROUP BY c.brand
-    ) AS t2
-    USING (car_brand);
+    SELECT ap.name_parts AS part_name, 
+           COUNT(*) AS count_sold, 
+           SUM(ap.purchase_price) AS total_profit
+    FROM auto_parts ap
+    JOIN orders o ON o.id = ap.idorder
+    WHERE ap.status IN ('Продана', 'продана', 'продано', 'Продано')
+      AND o.datetime >= NOW() - INTERVAL 3 MONTH
+    GROUP BY ap.name_parts;
 ";
 
 $result = mysqli_query($db, $query);
 $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
+// Query to get total profit
 $totalProfitQuery = "
     SELECT SUM(ap.purchase_price) AS total_profit
     FROM auto_parts ap
@@ -44,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $sheet->setCellValue('A1', 'Марка автомобиля');
+    $sheet->setCellValue('A1', 'Название запчасти');
     $sheet->setCellValue('C1', 'Количество проданных запчастей');
     $sheet->setCellValue('E1', 'Прибыль');
 
@@ -68,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $row = 2;
     foreach ($data as $item) {
-        $sheet->setCellValue('A' . $row, $item['car_brand']);
-        $sheet->setCellValue('C' . $row, $item['count_parts']);
-        $sheet->setCellValue('E' . $row, $item['total_price']);
+        $sheet->setCellValue('A' . $row, $item['part_name']);
+        $sheet->setCellValue('C' . $row, $item['count_sold']);
+        $sheet->setCellValue('E' . $row, $item['total_profit']);
         $sheet->mergeCells('A' . $row . ':B' . $row);
         $sheet->mergeCells('C' . $row . ':D' . $row);
 
@@ -102,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ],
     ]);
 
+    // Handle chart images
     $salesChartImage = 'sales_chart.png';
     $profitChartImage = 'profit_chart.png';
 
@@ -127,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment; filename="report.xlsx"');
+    header('Content-Disposition: attachment; filename="parts_report.xlsx"');
     header('Cache-Control: max-age=0');
 
     $writer->save('php://output');
@@ -137,11 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аналитика</title>
+    <title>Аналитика по видам запчастей</title>
     <link rel="stylesheet" href="style.css">
     <style>
         body {
@@ -191,9 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: #777;
         }
 
-        h1,
-        h2,
-        h3 {
+        h1, h2, h3 {
             color: #333;
             margin-bottom: 15px;
         }
@@ -212,8 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 20px;
         }
 
-        table th,
-        table td {
+        table th, table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
@@ -287,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </a>
         <p>
             <a href="analitics_employe.php" class="button">Аналитика по работникам</a>
-            <a href="analitics_part.php" class="button">Аналитика запчастей по видам</a>
+            <a href="analitics.php" class="button">Аналитика запчастей по маркам</a>
             <a href="admin_interface_main.php" class="button">Назад</a>
             <a href="index.php?logout='1'" class="button">Выйти</a>
         </p>
@@ -295,13 +282,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <main>
         <section class="analytics">
-            <h1>Аналитика запчастей по маркам</h1>
+            <h1>Аналитика запчастей по видам</h1>
             <div class="summary">
-                <h2>Количество проданных запчастей и прибыль по маркам автомобилей за последние 3 месяца</h2>
+                <h2>Количество проданных запчастей и прибыль по видам запчастей за последние 3 месяца</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>Марка автомобиля</th>
+                            <th>Название запчасти</th>
                             <th>Количество проданных запчастей</th>
                             <th>Прибыль</th>
                         </tr>
@@ -310,9 +297,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php
                         foreach ($data as $row) {
                             echo "<tr>
-                                <td>{$row['car_brand']}</td>
-                                <td>{$row['count_parts']}</td>
-                                <td>{$row['total_price']}</td>
+                                <td>{$row['part_name']}</td>
+                                <td>{$row['count_sold']}</td>
+                                <td>{$row['total_profit']}</td>
                               </tr>";
                         }
                         ?>
@@ -320,20 +307,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </table>
             </div>
             <div class="charts">
-                <h2>Диаграммы продаж и прибыли по маркам автомобилей</h2>
+                <h2>Диаграммы продаж и прибыли по видам запчастей</h2>
                 <canvas id="salesChart" width="350" height="200"></canvas>
                 <canvas id="profitChart" width="350" height="200"></canvas>
             </div>
-            <h3>Общая сумма прибыли: <span
-                    id="total-profit"><?php echo number_format($totalProfit, 2, ',', ' '); ?></span> руб.</h3>
+            <h3>Общая сумма прибыли: <span id="total-profit"><?php echo number_format($totalProfit, 2, ',', ' '); ?></span> руб.</h3>
             <button id="exportReport" class="custom-button" onclick="exportReport()">Выгрузить отчет в Excel</button>
         </section>
     </main>
 
     <script>
-        const carBrands = <?php echo json_encode(array_column($data, 'car_brand')); ?>;
-        const salesData = <?php echo json_encode(array_column($data, 'count_parts')); ?>;
-        const profitData = <?php echo json_encode(array_column($data, 'total_price')); ?>;
+        const partNames = <?php echo json_encode(array_column($data, 'part_name')); ?>;
+        const salesData = <?php echo json_encode(array_column($data, 'count_sold')); ?>;
+        const profitData = <?php echo json_encode(array_column($data, 'total_profit')); ?>;
 
         const ctxSales = document.getElementById('salesChart').getContext('2d');
         const ctxProfit = document.getElementById('profitChart').getContext('2d');
@@ -341,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const salesChart = new Chart(ctxSales, {
             type: 'bar',
             data: {
-                labels: carBrands,
+                labels: partNames,
                 datasets: [{
                     label: 'Количество проданных запчастей',
                     data: salesData,
@@ -362,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const profitChart = new Chart(ctxProfit, {
             type: 'bar',
             data: {
-                labels: carBrands,
+                labels: partNames,
                 datasets: [{
                     label: 'Прибыль',
                     data: profitData,
@@ -400,13 +386,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'report.xlsx';
+                a.download = 'parts_report.xlsx';
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-            }).catch(error => console.error('There was a problem with the fetch operation:', error));
+            }).catch(error => console.error('Ошибка:', error));
         }
     </script>
 </body>
-
 </html>

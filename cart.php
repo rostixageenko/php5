@@ -17,7 +17,7 @@ if (isset($_SESSION['user_id'])) {
     mysqli_stmt_bind_param($stmt, 'i', $customerId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
-    
+
     if ($row = mysqli_fetch_assoc($result)) {
         $cartId = $row['id'];
 
@@ -52,12 +52,12 @@ if (isset($_SESSION['user_id'])) {
         $_SESSION['cart'] = 1;
         $part_cart = $autoPartsManager->renderTable($parts, $customerId);
     } else {
+        $part_cart = $autoPartsManager->renderTable($parts, $customerId);
         $part_cart = []; // Если корзина не найдена
     }
 
     mysqli_stmt_close($stmt);
-}
-else {
+} else {
     // Если пользователь не авторизован, можно перенаправить на страницу входа
     header('Location: login.php');
     exit();
@@ -68,7 +68,7 @@ else {
 // Оформление заказа
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
     $totalPrice = array_sum(array_column($parts, 'purchase_price'));
-    
+
     if ($totalPrice !== 0) {
         $selectedDeliveryMethod = $_POST['deliveryMethod'];
         $customerId = $_SESSION['customerId'];
@@ -178,13 +178,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
 
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Корзина</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .success, .error {
+        .success,
+        .error {
             color: white;
             padding: 10px;
             position: fixed;
@@ -195,10 +197,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             display: none;
             border-radius: 8px;
         }
+
         .success {
             background: rgba(76, 175, 80, 0.8);
             border: 1px solid #3c763d;
         }
+
         .error {
             background: rgba(192, 57, 43, 0.8);
             border: 1px solid #a94442;
@@ -209,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             const cartItems = document.querySelectorAll('.part-card');
             const itemCount = cartItems.length;
             const totalPriceElement = document.getElementById('totalPrice');
-            
+
             let totalPrice = 0;
             cartItems.forEach(item => {
                 const price = parseFloat(item.querySelector('.part-price').innerText) || 0;
@@ -230,21 +234,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Удаляем элемент из DOM
-                    button.closest('.part-card').remove();
-                    // Обновляем количество товаров и итоговую стоимость
-                    updateOrderSummary();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => console.error('Ошибка:', error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Удаляем элемент из DOM
+                        button.closest('.part-card').remove();
+                        // Обновляем количество товаров и итоговую стоимость
+                        updateOrderSummary();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
         }
     </script>
 </head>
+
 <body>
     <header class="header-user">
         <a href="user_interface_main.php">
@@ -271,33 +276,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
                     </div>
                 </div>
             </div>
-           
+
         </div>
-        
+
         <div>
             <aside class="order-summary">
-                <h2>Информация о заказе</h2> 
+                <h2>Информация о заказе</h2>
                 <form method="POST" action="cart.php">
-                <span>Способ доставки</span>
-                <select class="deliverySelect" id="deliverySelect" name="deliveryMethod">
-                    <option value="Самовывоз">Самовывоз</option>
-                    <option value="Доставка">Доставка</option>
-                </select>
-                <div class="summary-item total">
-                    <span>Итого</span>
-                    <span class="total-price" id="totalPrice"><?php 
+                    <span>Способ доставки</span>
+                    <select class="deliverySelect" id="deliverySelect" name="deliveryMethod">
+                        <option value="Самовывоз">Самовывоз</option>
+                        <option value="Доставка">Доставка</option>
+                    </select>
+                    <div class="summary-item total">
+                        <span>Итого</span>
+                        <span class="total-price" id="totalPrice"><?php
                         $prices = array_column($parts, 'purchase_price');
                         $totalPrice = array_sum($prices);
                         echo $totalPrice; ?> б.р</span>
-                </div>
-                <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
-            </form>
+                    </div>
+                    <button type="submit" class="custom-button-users" id="checkout" name="checkout">Заказать</button>
+                </form>
             </aside>
         </div>
     </main>
 
-    <div id="popup-message" class="<?php echo $messageType; ?>" style="<?php echo !empty($message) ? 'display:block;' : ''; ?>">
-        <?php if (!empty($message)) echo $message; ?>
+    <div id="popup-message" class="<?php echo $messageType; ?>"
+        style="<?php echo !empty($message) ? 'display:block;' : ''; ?>">
+        <?php if (!empty($message))
+            echo $message; ?>
     </div>
 
     <footer>
@@ -317,14 +324,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
         cartSummary.addEventListener('click', () => {
             cartContent.classList.toggle('active');
             if (cartContent.classList.contains('active')) {
-                const contentHeight = cartContent.scrollHeight; 
-                cartContainer.style.height = `${120 + contentHeight}px`; 
+                const contentHeight = cartContent.scrollHeight;
+                cartContainer.style.height = `${120 + contentHeight}px`;
             } else {
-                cartContainer.style.height = '120px'; 
+                cartContainer.style.height = '120px';
             }
         });
 
     </script>
     <script src="frontjs.js"></script>
 </body>
+
 </html>
